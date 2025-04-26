@@ -53,30 +53,65 @@ public class Api
 
         return true;
     }
-
-    public static bool IsLogin;
-
-    public static string Login(string name = "", string password = "")
+    
+    public class  Login
     {
-        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password))
+        public static bool IsLogin;
+
+        public static string Loginin(string name = "", string password = "")
         {
-            password = User.Password;
-            name = User.Username;
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password))
+            {
+                password = User.Password;
+                name = User.Username;
+            }
+
+            var tempApiLogin = Path.GetTempFileName();
+
+            if (!Download(
+                    $"https://cf-v2.uapis.cn/login?username={name}&password={password}", tempApiLogin
+                )) return "下载错误";
+
+            var jObject = JObject.Parse(File.ReadAllText(tempApiLogin));
+            var msg = jObject["msg"]?.ToString();
+
+            if (msg != "登录成功") return msg;
+
+            User.Save(name, password, jObject["data"]?["usertoken"]?.ToString());
+            IsLogin = true;
+            return msg;
         }
 
-        var tempApiLogin = Path.GetTempFileName();
+        public static void Loginout()
+        {
+            User.Save("","","");
+        }
+    }
+    
+    public class UserInformation
+    {
+        
+        
+        public void Load()
+        {
+            var tempApiUser = Path.GetTempFileName();
+            if (!Download(
+                    $"https://cf-v2.uapis.cn/userinfo?token={User.Usertoken}", tempApiUser
+                )) return;
+            var jObject = JObject.Parse(File.ReadAllText(tempApiUser));
+            if (jObject["msg"]?.ToString() != "请求成功") return;
 
-        if (!Download(
-                $"https://cf-v2.uapis.cn/login?username={name}&password={password}", tempApiLogin
-            )) return "下载错误";
-
-        var jObject = JObject.Parse(File.ReadAllText(tempApiLogin));
-        var msg = jObject["msg"]?.ToString();
-
-        if (msg != "登录成功") return msg;
-
-        User.Save(name, password, jObject["data"]?["usertoken"]?.ToString());
-        IsLogin = true;
-        return msg;
+            jObject["usergroup"]?.ToString();
+            jObject["term"]?.ToString();
+            jObject["qq"]?.ToString();
+            jObject["email"]?.ToString();
+            jObject["tunnel"]?.ToString();
+            jObject["tunnelstate"]?.ToString();
+            jObject["userimg"]?.ToString();
+            jObject["username"]?.ToString();
+            jObject["bandwidth"]?.ToString();
+            jObject["abroadBandwidth"]?.ToString();
+            jObject["realname"]?.ToString();
+        }
     }
 }
