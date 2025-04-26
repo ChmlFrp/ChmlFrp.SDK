@@ -7,14 +7,15 @@ using Newtonsoft.Json.Linq;
 
 namespace ChmlFrp.Api;
 
-public abstract class User
+public static class User
 {
-    private static readonly RegistryKey Key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
+    private static readonly RegistryKey Key =
+        Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
     public static string Username;
     public static string Password;
     public static string Usertoken;
 
-    protected User()
+    static User()
     {
         Load();
     }
@@ -31,7 +32,6 @@ public abstract class User
         Key.SetValue("username", username);
         Key.SetValue("password", password);
         Key.SetValue("usertoken", usertoken);
-
         Load();
     }
 }
