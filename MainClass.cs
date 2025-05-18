@@ -1,9 +1,15 @@
-﻿using System;
-using System.IO;
-using System.Net;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.Win32;
+#if NET48
 using Newtonsoft.Json.Linq;
+
+#else
+using System.Text.Json;
+using System.Text.Json.Nodes;
+#endif
 
 namespace ChmlFrp.Api;
 
@@ -11,6 +17,7 @@ public static class User
 {
     private static readonly RegistryKey Key =
         Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
+
     public static string Username;
     public static string Password;
     public static string Usertoken;
@@ -27,38 +34,52 @@ public static class User
         Usertoken = Key.GetValue("usertoken")?.ToString();
     }
 
-    public static void Save(string username, string password, string usertoken)
+    public static void Save(string username, string password, string usertoken = null)
     {
-        Key.SetValue("username", username);
-        Key.SetValue("password", password);
-        Key.SetValue("usertoken", usertoken);
+        if (username != null) Key.SetValue("username", username);
+        if (password != null) Key.SetValue("password", password);
+        if (usertoken != null) Key.SetValue("usertoken", usertoken);
+
         Load();
     }
 }
 
-public class Api
+public abstract class Api
 {
-    private static bool Download(string url, string path)
+    private static async Task<object> GetApi(string url, Dictionary<string, string> parameters = null)
     {
+        if (parameters != null)
+            url = $"{url}?{string.Join("&", parameters.Select(pair => $"{pair.Key}={pair.Value}"))}";
+
         try
         {
-            using WebClient client = new();
-            client.Encoding = Encoding.UTF8;
-            client.DownloadFile(new Uri(url), path);
+            using var client = new HttpClient();
+            var response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+
+#if NET48
+            return JObject.Parse(content);
+#else
+        return JsonNode.Parse(content);
+#endif
         }
         catch
         {
-            return false;
+            return null;
         }
-
-        return true;
     }
-    
-    public class  Login
+
+    public abstract class Login
     {
         public static bool IsLogin;
 
-        public static string Loginin(string name = "", string password = "")
+        public static async Task InitializeAsync()
+        {
+            await Loginin();
+        }
+
+        public static async Task<string> Loginin(string name = "", string password = "")
         {
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password))
             {
@@ -66,52 +87,92 @@ public class Api
                 name = User.Username;
             }
 
-            var tempApiLogin = Path.GetTempFileName();
+            User.Save(name, password);
 
-            if (!Download(
-                    $"https://cf-v2.uapis.cn/login?username={name}&password={password}", tempApiLogin
-                )) return "下载错误";
+            var parameters = new Dictionary<string, string>
+            {
+                { "username", $"{name}" },
+                { "password", $"{password}" }
+            };
+            var jObject = await GetApi("https://cf-v2.uapis.cn/login", parameters);
+            if (jObject == null) return "网络异常，请检查网络连接";
 
-            var jObject = JObject.Parse(File.ReadAllText(tempApiLogin));
-            var msg = jObject["msg"]?.ToString();
-
+#if NET48
+            var msg = ((JObject)jObject)["msg"]?.ToString();
+            var usertoken = ((JObject)jObject)["data"]?["usertoken"]?.ToString();
+#else
+var msg = ((JsonNode)jObject)?["msg"]?.ToString();
+var usertoken = ((JsonNode)jObject)?["data"]?["usertoken"]?.ToString();
+#endif
             if (msg != "登录成功") return msg;
 
-            User.Save(name, password, jObject["data"]?["usertoken"]?.ToString());
+            User.Save(name, password, usertoken);
             IsLogin = true;
-            return msg;
+            await UserInformation.Load();
+            return "登录成功";
         }
 
         public static void Loginout()
         {
-            User.Save("","","");
+            User.Save("", "");
+            IsLogin = false;
         }
     }
-    
-    public class UserInformation
-    {
-        
-        
-        public void Load()
-        {
-            var tempApiUser = Path.GetTempFileName();
-            if (!Download(
-                    $"https://cf-v2.uapis.cn/userinfo?token={User.Usertoken}", tempApiUser
-                )) return;
-            var jObject = JObject.Parse(File.ReadAllText(tempApiUser));
-            if (jObject["msg"]?.ToString() != "请求成功") return;
 
-            jObject["usergroup"]?.ToString();
-            jObject["term"]?.ToString();
-            jObject["qq"]?.ToString();
-            jObject["email"]?.ToString();
-            jObject["tunnel"]?.ToString();
-            jObject["tunnelstate"]?.ToString();
-            jObject["userimg"]?.ToString();
-            jObject["username"]?.ToString();
-            jObject["bandwidth"]?.ToString();
-            jObject["abroadBandwidth"]?.ToString();
-            jObject["realname"]?.ToString();
+    public abstract class UserInformation
+    {
+        public static string usergroup;
+        public static string term;
+        public static string qq;
+        public static string email;
+        public static string tunnel;
+        public static string tunnelstate;
+        public static string userimg;
+        public static string username;
+        public static string bandwidth;
+        public static string abroadBandwidth;
+        public static string realname;
+
+        static UserInformation()
+        {
+            Load();
+        }
+
+        public static async Task Load()
+        {
+            if (Login.IsLogin == false) return;
+
+            var parameters = new Dictionary<string, string> { { "token", $"{User.Usertoken}" } };
+            var jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", parameters);
+            if (jObject == null) return;
+
+#if NET48
+            var data = ((JObject)jObject)["data"];
+            usergroup = data?["usergroup"]?.ToString();
+            term = data?["term"]?.ToString();
+            qq = data?["qq"]?.ToString();
+            email = data?["email"]?.ToString();
+            tunnel = data?["tunnel"]?.ToString();
+            tunnelstate = data?["tunnelstate"]?.ToString();
+            userimg = data?["userimg"]?.ToString();
+            username = data?["username"]?.ToString();
+            bandwidth = data?["bandwidth"]?.ToString();
+            abroadBandwidth = data?["abroadBandwidth"]?.ToString();
+            realname = data?["realname"]?.ToString();
+#else
+    var data = ((JsonNode)jObject)?["data"];
+    usergroup = data?["usergroup"]?.ToString();
+    term = data?["term"]?.ToString();
+    qq = data?["qq"]?.ToString();
+    email = data?["email"]?.ToString();
+    tunnel = data?["tunnel"]?.ToString();
+    tunnelstate = data?["tunnelstate"]?.ToString();
+    userimg = data?["userimg"]?.ToString();
+    username = data?["username"]?.ToString();
+    bandwidth = data?["bandwidth"]?.ToString();
+    abroadBandwidth = data?["abroadBandwidth"]?.ToString();
+    realname = data?["realname"]?.ToString();
+#endif
         }
     }
 }
