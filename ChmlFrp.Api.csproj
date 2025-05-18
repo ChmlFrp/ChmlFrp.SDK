@@ -1,21 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Version>0.0.2</Version>
-        <PackageId>ChmlFrp.Api</PackageId>
+        <Version>0.0.5</Version>
         <license>Apache-2.0</license>
         <LangVersion>latest</LangVersion>
+        <PackageId>ChmlFrp.Api</PackageId>
         <AssemblyName>ChmlFrp.Api</AssemblyName>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Copyright>Copyright © ChmlFrp 2025</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-        <TargetFrameworks>net48;net9.0</TargetFrameworks>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <TargetFrameworks>net9.0-windows;net48</TargetFrameworks>
+        <PackageProjectUrl>https://github.com/ChmlFrp/ChmlFrp.Api</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>
-        <Reference Include="System.Net.Http" Condition="'$(TargetFramework)' == 'net48'" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" Condition="'$(TargetFramework)' == 'net48'" />
+        <Reference Include="System.Net.Http" Condition="'$(TargetFramework)' == 'net48'"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" Condition="'$(TargetFramework)' == 'net48'"/>
         <None Include="README.md" Pack="true" PackagePath="\"/>
         <None Include="LICENSE.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
