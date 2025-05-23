@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Version>0.0.7</Version>
+        <Authors>By Qusay</Authors>
+        <license>Apache-2.0</license>
+        <OutputType>Library</OutputType>
+        <LangVersion>latest</LangVersion>
+        <PackageId>ChmlFrp.SDK</PackageId>
+        <AssemblyName>ChmlFrp.SDK</AssemblyName>
+        <Copyright>Copyright © ChmlFrp 2025</Copyright>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <RepositoryUrl>https://github.com/ChmlFrp/ChmlFrp.SDK</RepositoryUrl>
+        <Description>一个方便.NET开发者开发第三方ChmlFrp客户端的Nuget包。</Description>
+        <TargetFrameworks>net48;net9.0-windows</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\"/>
+        <None Include="LICENSE.md" Pack="true" PackagePath="\"/>
+        <Reference Include="System.Net.Http" Condition="'$(TargetFramework)' == 'net48'"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" Condition="'$(TargetFramework)' == 'net48'"/>
+    </ItemGroup>
+
+</Project>
+
