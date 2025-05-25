@@ -76,10 +76,11 @@ public abstract class User
     {
         public string username { get; set; }
         public string usergroup { get; set; }
+        public string userimg { get; set; }
         public string term { get; set; }
         public string qq { get; set; }
         public string email { get; set; }
-        public string bandwidth { get; set; }
+        public int bandwidth { get; set; }
         public int tunnel { get; set; }
         public int tunnelCount { get; set; }
         public string realname { get; set; }

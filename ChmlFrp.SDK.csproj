@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Version>0.0.7</Version>
+        <Version>0.0.8</Version>
         <Authors>By Qusay</Authors>
         <license>Apache-2.0</license>
         <OutputType>Library</OutputType>
