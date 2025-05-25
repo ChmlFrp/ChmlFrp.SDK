@@ -14,14 +14,14 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <RepositoryUrl>https://github.com/ChmlFrp/ChmlFrp.SDK</RepositoryUrl>
         <Description>一个方便.NET开发者开发第三方ChmlFrp客户端的Nuget包。</Description>
-        <TargetFrameworks>net48;net9.0-windows</TargetFrameworks>
+        <TargetFrameworks>net48;net472;net8.0-windows;net9.0-windows</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\"/>
         <None Include="LICENSE.md" Pack="true" PackagePath="\"/>
-        <Reference Include="System.Net.Http" Condition="'$(TargetFramework)' == 'net48'"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" Condition="'$(TargetFramework)' == 'net48'"/>
+        <Reference Include="System.Net.Http" Condition="'$(TargetFramework)' == 'net472' OR '$(TargetFramework)' == 'net48'"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" Condition="'$(TargetFramework)' == 'net472' OR '$(TargetFramework)' == 'net48'"/>
     </ItemGroup>
 
 </Project>

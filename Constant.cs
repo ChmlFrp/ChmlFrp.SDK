@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 #if NETFRAMEWORK
 using Newtonsoft.Json.Linq;
@@ -40,5 +42,24 @@ public abstract class Constant
         {
             return null;
         }
+    }
+
+    public abstract class Paths
+    {
+        private static readonly string DataPath =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ChmlFrp");
+
+        public static readonly string LogPath = Path.Combine(DataPath, "Logs");
+        public static readonly string FrpExePath = Path.Combine(DataPath, "frpc.exe");
+        public static readonly string PicturesPath = Path.Combine(DataPath, "Pictures");
+
+        static Paths()
+        {
+            Directory.CreateDirectory(DataPath);
+            Directory.CreateDirectory(LogPath);
+            Directory.CreateDirectory(PicturesPath);
+        }
+
+        public static bool IsFrpExeExists => File.Exists(FrpExePath);
     }
 }
