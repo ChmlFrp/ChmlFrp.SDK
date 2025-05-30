@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Net.Http;
 #if NETFRAMEWORK
@@ -13,10 +12,24 @@ namespace ChmlFrp.SDK;
 
 public abstract class Constant
 {
+    private static readonly HttpClient Client = new();
+
     public static async Task<object> GetApi(string url, Dictionary<string, string> parameters = null)
     {
-        var content = await GetApiConTent(url, parameters);
-        if (content == null) return null;
+        if (parameters != null)
+            url = $"{url}?{string.Join("&", parameters.Select(pair => $"{pair.Key}={pair.Value}"))}";
+
+        string content;
+        try
+        {
+            var response = await Client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            content = await response.Content.ReadAsStringAsync();
+        }
+        catch
+        {
+            return null;
+        }
 
 #if NETFRAMEWORK
         return JObject.Parse(content);
@@ -25,41 +38,21 @@ public abstract class Constant
 #endif
     }
 
-    public static async Task<string> GetApiConTent(string url, Dictionary<string, string> parameters = null)
+    public static async Task<bool> GetFile(string url, string path)
     {
-        if (parameters != null)
-            url = $"{url}?{string.Join("&", parameters.Select(pair => $"{pair.Key}={pair.Value}"))}";
-
         try
         {
-            HttpClient client = new();
-            var response = await client.GetAsync(url);
+            var response = await Client.GetAsync(url);
             response.EnsureSuccessStatusCode();
-            client.Dispose();
-            return await response.Content.ReadAsStringAsync();
+            var stream = await response.Content.ReadAsStreamAsync();
+            var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+            await stream.CopyToAsync(fileStream);
         }
         catch
         {
-            return null;
-        }
-    }
-
-    public abstract class Paths
-    {
-        private static readonly string DataPath =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ChmlFrp");
-
-        public static readonly string LogPath = Path.Combine(DataPath, "Logs");
-        public static readonly string FrpExePath = Path.Combine(DataPath, "frpc.exe");
-        public static readonly string PicturesPath = Path.Combine(DataPath, "Pictures");
-
-        static Paths()
-        {
-            Directory.CreateDirectory(DataPath);
-            Directory.CreateDirectory(LogPath);
-            Directory.CreateDirectory(PicturesPath);
+            return false;
         }
 
-        public static bool IsFrpExeExists => File.Exists(FrpExePath);
+        return true;
     }
 }
