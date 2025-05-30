@@ -42,14 +42,12 @@ public abstract class Constant
     {
         try
         {
-            var response = await Client.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-            var stream = await response.Content.ReadAsStreamAsync();
-            var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-            await stream.CopyToAsync(fileStream);
+            var fileData = await Client.GetByteArrayAsync(url);
+            File.WriteAllBytes(path, fileData);
         }
         catch
         {
+            if (File.Exists(path)) File.Delete(path);
             return false;
         }
 

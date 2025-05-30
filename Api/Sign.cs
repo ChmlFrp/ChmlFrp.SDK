@@ -37,11 +37,12 @@ public abstract class Sign
         var usertoken = ((JsonNode)jObject)?["data"]?["usertoken"]?.ToString();
 #endif
 
+        Paths.WritingLog($"Login results: {msg}");
         if (msg != "登录成功") return msg;
 
         User.Save(name, password, usertoken);
         IsSignin = true;
-        return "登录成功";
+        return msg;
     }
 
     public static void Signout()
