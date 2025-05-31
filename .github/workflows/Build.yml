@@ -1,6 +1,4 @@
-name: .NET Packing
-permissions: 
-  contents: read
+name: Project Building
 on:
   push:
     branches:
@@ -13,39 +11,22 @@ jobs:
       matrix:
         configuration: [Release]
     runs-on: windows-latest
-    env:
-      Project_File_Name: "ChmlFrp.SDK" 
-
     steps:
+      - uses: actions/checkout@main
+      - uses: actions/setup-dotnet@main
 
-    - name: Checkout
-      uses: actions/checkout@main
-      with:
-        fetch-depth: 0
+      - name: Cache
+        uses: actions/cache@main
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
 
-          
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@main
+      - name: Building
+        run: dotnet build -c ${{ matrix.configuration }}
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@main
-
-    - name: Cache NuGet packages
-      uses: actions/cache@main
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
-
-    - name: Restore NuGet packages
-      run: nuget restore ${{ env.Project_File_Name }}.csproj
-
-    - name: Build the project
-      run: msbuild ${{ env.Project_File_Name }}.csproj /p:Configuration=${{ matrix.configuration }}
-
-    - name: Upload a Build Artifact to GitHub
-      uses: actions/upload-artifact@main
-      with:
-        name: ${{ matrix.configuration }}
-        path: bin/
+      - uses: actions/upload-artifact@main
+        with:
+          name: ${{ matrix.configuration }}
+          path: |
+            **/bin/**/*.nupkg
