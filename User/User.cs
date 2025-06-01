@@ -15,38 +15,36 @@ public abstract class User
     private static readonly RegistryKey Key =
         Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
 
-    public static string Username;
-    public static string Password;
-    public static string Usertoken;
-
-    static User()
+    public static string Username
     {
-        Load();
+        get => Key.GetValue("username")?.ToString();
+        set => Key.SetValue("username", Username);
     }
 
-    private static void Load()
+    public static string Password
     {
-        Username = Key.GetValue("username")?.ToString();
-        Password = Key.GetValue("password")?.ToString();
-        Usertoken = Key.GetValue("usertoken")?.ToString();
+        get => Key.GetValue("password")?.ToString();
+        set => Key.SetValue("password", Password);
+    }
+
+    public static string Usertoken
+    {
+        get => Key.GetValue("usertoken")?.ToString();
+        set => Key.SetValue("usertoken", Usertoken);
     }
 
     public static void Save(string username, string password, string usertoken = null)
     {
-        if (username != null) Key.SetValue("username", username);
-        if (password != null) Key.SetValue("password", password);
-        if (usertoken != null) Key.SetValue("usertoken", usertoken);
-
-        Load();
+        if (password != null) Username = username;
+        if (usertoken != null) Usertoken = usertoken;
+        if (username != null) Password = password;
     }
 
     public static void Clear()
     {
-        Key.DeleteValue("username");
-        Key.DeleteValue("password");
-        Key.DeleteValue("usertoken");
-
-        Load();
+        Key.DeleteValue("username", false);
+        Key.DeleteValue("password", false);
+        Key.DeleteValue("usertoken", false);
     }
 
     public static async Task<UserInfo> GetUserInfo()

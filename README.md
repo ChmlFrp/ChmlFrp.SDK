@@ -79,11 +79,7 @@ using System.IO;
 using ChmlFrp.SDK;
 
 // 可以自定义创建文件夹
-Paths.CreateDictionaryList = 
-[
-    $"{Paths.DataPath}",
-    Path.Combine(Paths.DataPath, 【文件夹名】)
-]
+CreateDictionaryList.Add(Path.Combine(Paths.DataPath, 【文件夹名】));
 
 // 在Init时创建文件夹，日志文件和下载FRPC文件
 Paths.Init(【你的启动器缩写】);

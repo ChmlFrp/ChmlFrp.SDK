@@ -1,16 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Version>0.1.0</Version>
+        <Version>0.1.1</Version>
         <Authors>By Qusay</Authors>
-        <license>Apache-2.0</license>
-        <OutputType>Library</OutputType>
         <LangVersion>latest</LangVersion>
         <PackageId>ChmlFrp.SDK</PackageId>
         <AssemblyName>ChmlFrp.SDK</AssemblyName>
+        <PackageIcon>NugetLogo.png</PackageIcon>
         <Copyright>Copyright © ChmlFrp 2025</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <RepositoryUrl>https://github.com/ChmlFrp/ChmlFrp.SDK</RepositoryUrl>
         <Description>一个方便.NET开发者开发第三方ChmlFrp客户端的Nuget包。</Description>
@@ -19,9 +17,12 @@
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\"/>
-        <None Include="LICENSE.md" Pack="true" PackagePath="\"/>
-        <Reference Include="System.Net.Http" Condition="'$(TargetFramework)' == 'net472' OR '$(TargetFramework)' == 'net48'"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" Condition="'$(TargetFramework)' == 'net472' OR '$(TargetFramework)' == 'net48'"/>
+        <None Include="NugetLogo.png" Pack="true" PackagePath="\"/>
+        <Reference Include="System.Net.Http" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'"/>
+        <Reference Include="System.Management" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'"/>
+        <PackageReference Include="System.Text.Json" Version="9.0.5" Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'"/>
+        <PackageReference Include="System.Management" Version="9.0.5" Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'"/>
     </ItemGroup>
 
 </Project>
