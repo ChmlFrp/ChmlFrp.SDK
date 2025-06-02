@@ -9,9 +9,17 @@ namespace ChmlFrp.SDK.Frpc;
 
 public abstract class Start
 {
-    public static event Action OnStartTrue;
-    public static event Action OnStartFalse;
-    public static event Action OnIniUnKnown;
+    private static event Action OnStartTrue;
+    private static event Action OnStartFalse;
+    private static event Action OnIniUnKnown;
+    
+    public static void ActionSet(Action onStartTrue, Action onStartFalse, Action onIniUnKnown)
+    {
+        OnStartTrue = onStartTrue;
+        OnStartFalse = onStartFalse;
+        OnIniUnKnown = onIniUnKnown;
+    }
+    
     public static string FrpclogFilePath;
 
     public static async void StartTunnel(string tunnelname)
@@ -54,6 +62,7 @@ public abstract class Start
             File.AppendAllText(FrpclogFilePath, logLine + Environment.NewLine, Encoding.UTF8);
             if (args.Data.Contains("启动成功")) OnStartTrue?.Invoke();
             else if (args.Data.Contains("[W]") || args.Data.Contains("[E]")) OnStartFalse?.Invoke();
+
         };
 
         frpProcess.Start();

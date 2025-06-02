@@ -12,8 +12,14 @@ public abstract class Stop
     private static readonly Regex IniPathRegex =
         new(@"-c\s+([^\s]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    public static event Action OnStopTrue;
-    public static event Action OnStopFalse;
+    private static event Action OnStopTrue;
+    private static event Action OnStopFalse;
+    
+    public static void ActionSet(Action onStopTrue, Action onStopFalse)
+    {
+        OnStopTrue = onStopTrue;
+        OnStopFalse = onStopFalse;
+    }
 
     public static async void StopTunnel(string tunnelname)
     {
