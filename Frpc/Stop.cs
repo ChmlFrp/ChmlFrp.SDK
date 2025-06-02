@@ -44,7 +44,7 @@ public abstract class Stop
                     // ignored
                 }
             }
-            
+
             if (frpcList.Count == 0)
             {
                 OnStopFalse?.Invoke();
@@ -52,7 +52,6 @@ public abstract class Stop
             }
 
             foreach (var frpcProcess in frpcList)
-            {
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "taskkill",
@@ -60,9 +59,8 @@ public abstract class Stop
                     UseShellExecute = false,
                     CreateNoWindow = true
                 })?.WaitForExit();
-            }
         });
-        
+
         OnStopTrue?.Invoke();
     }
 
@@ -97,6 +95,7 @@ public abstract class Stop
                 if (data.Contains(tunnelname))
                     return true;
             }
+
             return false;
         });
     }

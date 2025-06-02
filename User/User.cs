@@ -1,4 +1,4 @@
-﻿﻿using ChmlFrp.SDK.API;
+﻿using ChmlFrp.SDK.API;
 using Microsoft.Win32;
 #if NETFRAMEWORK
 using Newtonsoft.Json.Linq;

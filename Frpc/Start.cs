@@ -18,7 +18,7 @@ public abstract class Start
     {
         if (!Paths.IsFrpcExists) return;
         if (await Stop.IsTunnelRunning(tunnelname)) return;
-        
+
         var iniData = await Tunnel.GetTunnelIniData(tunnelname);
         if (iniData == null)
         {

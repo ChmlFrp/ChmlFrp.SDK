@@ -18,15 +18,15 @@ public abstract class Sign
             password = User.Password;
             name = User.Username;
         }
-        
+
         User.Save(name, password);
-    
+
         var parameters = new Dictionary<string, string>
         {
             { "username", $"{name}" },
             { "password", $"{password}" }
         };
-     
+
         var jObject = await Constant.GetApi("https://cf-v2.uapis.cn/login", parameters);
         if (jObject == null) return "网络异常，请检查网络连接";
 
