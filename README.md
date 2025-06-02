@@ -33,7 +33,7 @@ Sign.Signout();
 ### 用户信息
 
 ```csharp
-uusing ChmlFrp.SDK;
+using ChmlFrp.SDK;
 
 // 以email为例
 var userInfo = await User.GetUserInfo();
@@ -92,3 +92,7 @@ Paths.WritingLog(【日志】);
 // 检测FRPC文件是否存在
 Console.WriteLine(Paths.IsFrpcExists.ToString());
 ```
+
+### 启动和关闭隧道
+
+关于启动和关闭隧道，相关使用请查看[CAT2示例代码](https://github.com/ChmlFrp/CAT2/blob/main/cat2/Views/Pages/TunnelPage.xaml.cs)。

@@ -11,21 +11,22 @@ public abstract class Sign
 {
     public static bool IsSignin;
 
-    public static async Task<string> Signin(string name = "", string password = "")
+    public static async Task<string> Signin(string name = null, string password = null)
     {
-        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(password))
         {
             password = User.Password;
             name = User.Username;
         }
-
+        
         User.Save(name, password);
-
+    
         var parameters = new Dictionary<string, string>
         {
             { "username", $"{name}" },
             { "password", $"{password}" }
         };
+     
         var jObject = await Constant.GetApi("https://cf-v2.uapis.cn/login", parameters);
         if (jObject == null) return "网络异常，请检查网络连接";
 

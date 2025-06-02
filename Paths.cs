@@ -23,7 +23,7 @@ public abstract class Paths
 
     public static void Init(string logName)
     {
-        LogFilePath = Path.Combine(DataPath, $"{logName}.log");
+        LogFilePath = Path.Combine(DataPath, $"Debug-{logName}.log");
         foreach (var path in CreateDictionaryList) Directory.CreateDirectory(path);
 
         if (File.Exists(LogFilePath)) File.WriteAllText(LogFilePath, string.Empty);

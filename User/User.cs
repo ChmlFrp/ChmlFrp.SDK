@@ -1,4 +1,4 @@
-﻿using ChmlFrp.SDK.API;
+﻿﻿using ChmlFrp.SDK.API;
 using Microsoft.Win32;
 #if NETFRAMEWORK
 using Newtonsoft.Json.Linq;
@@ -15,36 +15,38 @@ public abstract class User
     private static readonly RegistryKey Key =
         Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
 
-    public static string Username
+    public static string Username;
+    public static string Password;
+    public static string Usertoken;
+
+    static User()
     {
-        get => Key.GetValue("username")?.ToString();
-        set => Key.SetValue("username", Username);
+        Load();
     }
 
-    public static string Password
+    private static void Load()
     {
-        get => Key.GetValue("password")?.ToString();
-        set => Key.SetValue("password", Password);
-    }
-
-    public static string Usertoken
-    {
-        get => Key.GetValue("usertoken")?.ToString();
-        set => Key.SetValue("usertoken", Usertoken);
+        Username = Key.GetValue("username")?.ToString();
+        Password = Key.GetValue("password")?.ToString();
+        Usertoken = Key.GetValue("usertoken")?.ToString();
     }
 
     public static void Save(string username, string password, string usertoken = null)
     {
-        if (password != null) Username = username;
-        if (usertoken != null) Usertoken = usertoken;
-        if (username != null) Password = password;
+        if (username != null) Key.SetValue("username", username);
+        if (password != null) Key.SetValue("password", password);
+        if (usertoken != null) Key.SetValue("usertoken", usertoken);
+
+        Load();
     }
 
     public static void Clear()
     {
-        Key.DeleteValue("username", false);
-        Key.DeleteValue("password", false);
-        Key.DeleteValue("usertoken", false);
+        Key.DeleteValue("username");
+        Key.DeleteValue("password");
+        Key.DeleteValue("usertoken");
+
+        Load();
     }
 
     public static async Task<UserInfo> GetUserInfo()

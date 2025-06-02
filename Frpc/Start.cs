@@ -7,14 +7,18 @@ using static System.Text.RegularExpressions.Regex;
 
 namespace ChmlFrp.SDK.Frpc;
 
-public class Start
+public abstract class Start
 {
     public static event Action OnStartTrue;
     public static event Action OnStartFalse;
     public static event Action OnIniUnKnown;
+    public static string FrpclogFilePath;
 
     public static async void StartTunnel(string tunnelname)
     {
+        if (!Paths.IsFrpcExists) return;
+        if (await Stop.IsTunnelRunning(tunnelname)) return;
+        
         var iniData = await Tunnel.GetTunnelIniData(tunnelname);
         if (iniData == null)
         {
@@ -22,10 +26,10 @@ public class Start
             return;
         }
 
-        var frpciniFilePath = $"{Path.GetTempFileName()}.ini";
-        var frpclogFilePath = Path.Combine(Paths.DataPath, $"{tunnelname}.logs");
+        var frpciniFilePath = Path.GetTempFileName();
+        FrpclogFilePath = Path.Combine(Paths.DataPath, $"{tunnelname}.log");
         File.WriteAllText(frpciniFilePath, iniData);
-        File.WriteAllText(frpclogFilePath, string.Empty);
+        File.WriteAllText(FrpclogFilePath, string.Empty);
 
         var frpProcess = new Process
         {
@@ -47,7 +51,7 @@ public class Start
                 .Replace(frpciniFilePath, "{IniFile}");
             const string pattern = @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[A-Z]\] \[[^\]]+\] ?";
             logLine = Replace(logLine, pattern, "");
-            File.AppendAllText(frpclogFilePath, logLine + Environment.NewLine, Encoding.UTF8);
+            File.AppendAllText(FrpclogFilePath, logLine + Environment.NewLine, Encoding.UTF8);
             if (args.Data.Contains("启动成功")) OnStartTrue?.Invoke();
             else if (args.Data.Contains("[W]") || args.Data.Contains("[E]")) OnStartFalse?.Invoke();
         };
