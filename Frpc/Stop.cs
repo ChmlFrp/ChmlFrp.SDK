@@ -12,25 +12,19 @@ public abstract class Stop
     private static readonly Regex IniPathRegex =
         new(@"-c\s+([^\s]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    private static event Action OnStopTrue;
-    private static event Action OnStopFalse;
-    
-    public static void ActionSet(Action onStopTrue, Action onStopFalse)
-    {
-        OnStopTrue = onStopTrue;
-        OnStopFalse = onStopFalse;
-    }
-
-    public static async void StopTunnel(string tunnelname)
+    public static async void StopTunnel(
+        string tunnelName,
+        Action onStopTrue, 
+        Action onStopFalse)
     {
         await Task.Run(() =>
         {
             var frpcList = new List<Process>();
             var processes = Process.GetProcessesByName("frpc");
-
+            
             foreach (var process in processes)
             {
-                using var searcher = new ManagementObjectSearcher(
+                var searcher = new ManagementObjectSearcher(
                     $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}");
                 var commandLine = searcher.Get()
                     .Cast<ManagementObject>()
@@ -40,10 +34,12 @@ public abstract class Stop
                 var iniPath = matchResult.Success
                     ? matchResult.Groups[1].Value
                     : Path.Combine(Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "", "frpc.ini");
+                
                 try
                 {
                     var data = File.ReadAllText(iniPath);
-                    if (data.Contains(tunnelname)) frpcList.Add(process);
+                    if (data.Contains($"[{tunnelName}]")) 
+                        frpcList.Add(process);
                 }
                 catch
                 {
@@ -53,24 +49,18 @@ public abstract class Stop
 
             if (frpcList.Count == 0)
             {
-                OnStopFalse?.Invoke();
+                onStopFalse?.Invoke();
                 return;
             }
 
-            foreach (var frpcProcess in frpcList)
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = "taskkill",
-                    Arguments = $"/PID {frpcProcess.Id} /T /F",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                })?.WaitForExit();
+            foreach (var frpcProcess in frpcList) 
+                frpcProcess.Kill();
         });
-
-        OnStopTrue?.Invoke();
+        
+        onStopTrue?.Invoke();
     }
 
-    public static async Task<bool> IsTunnelRunning(string tunnelname)
+    public static async Task<bool> IsTunnelRunning(string tunnelName)
     {
         var processes = Process.GetProcessesByName("frpc");
 
@@ -78,7 +68,7 @@ public abstract class Stop
         {
             foreach (var process in processes)
             {
-                using var searcher = new ManagementObjectSearcher(
+                var searcher = new ManagementObjectSearcher(
                     $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}");
                 var commandLine = searcher.Get()
                     .Cast<ManagementObject>()
@@ -88,18 +78,17 @@ public abstract class Stop
                 var iniPath = matchResult.Success
                     ? matchResult.Groups[1].Value
                     : Path.Combine(Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "", "frpc.ini");
-                var data = "Oh Oh It's Nothing";
+                
                 try
                 {
-                    data = File.ReadAllText(iniPath);
+                    var data = File.ReadAllText(iniPath);
+                    if (data.Contains($"[{tunnelName}]"))
+                        return true;
                 }
                 catch
                 {
                     // ignored
                 }
-
-                if (data.Contains(tunnelname))
-                    return true;
             }
 
             return false;

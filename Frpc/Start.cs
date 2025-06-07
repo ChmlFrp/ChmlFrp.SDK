@@ -9,60 +9,71 @@ namespace ChmlFrp.SDK.Frpc;
 
 public abstract class Start
 {
-    private static event Action OnStartTrue;
-    private static event Action OnStartFalse;
-    private static event Action OnIniUnKnown;
+    public static async void StartTunnel(
+        string tunnelName,
+        Action onStartTrue, 
+        Action onStartFalse, 
+        Action onIniUnKnown)
     
-    public static void ActionSet(Action onStartTrue, Action onStartFalse, Action onIniUnKnown)
-    {
-        OnStartTrue = onStartTrue;
-        OnStartFalse = onStartFalse;
-        OnIniUnKnown = onIniUnKnown;
-    }
-    
-    public static string FrpclogFilePath;
-
-    public static async void StartTunnel(string tunnelname)
     {
         if (!Paths.IsFrpcExists) return;
-        if (await Stop.IsTunnelRunning(tunnelname)) return;
+        if (await Stop.IsTunnelRunning(tunnelName)) return;
 
-        var iniData = await Tunnel.GetTunnelIniData(tunnelname);
+        var iniData = await Tunnel.GetTunnelIniData(tunnelName);
         if (iniData == null)
         {
-            OnIniUnKnown?.Invoke();
+            onIniUnKnown?.Invoke(); 
             return;
         }
 
-        var frpciniFilePath = Path.GetTempFileName();
-        FrpclogFilePath = Path.Combine(Paths.DataPath, $"{tunnelname}.log");
-        File.WriteAllText(frpciniFilePath, iniData);
-        File.WriteAllText(FrpclogFilePath, string.Empty);
-
+        var inifilePath = Path.GetTempFileName();
+        var logfilePath = Path.Combine(Paths.DataPath, $"{tunnelName}.log");
+        File.WriteAllText(inifilePath, iniData);
+        File.WriteAllText(logfilePath, string.Empty);
+        Paths.WritingLog($"Starting tunnel: {tunnelName}");
+        
         var frpProcess = new Process
         {
             StartInfo =
             {
                 FileName = "cmd.exe",
-                Arguments = $"/c {Paths.FrpcPath} -c {frpciniFilePath}",
+                Arguments = $"/c {Paths.FrpcPath} -c {inifilePath}",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true,
                 StandardOutputEncoding = Encoding.UTF8
-            }
+            },
         };
 
-        frpProcess.OutputDataReceived += (_, args) =>
+        frpProcess.OutputDataReceived += async (_, args) =>
         {
             if (string.IsNullOrWhiteSpace(args.Data)) return;
+            
             var logLine = args.Data.Replace(User.Usertoken, "{Usertoken}")
-                .Replace(frpciniFilePath, "{IniFile}");
+                .Replace(inifilePath, "{IniFile}");
             const string pattern = @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[A-Z]\] \[[^\]]+\] ?";
             logLine = Replace(logLine, pattern, "");
-            File.AppendAllText(FrpclogFilePath, logLine + Environment.NewLine, Encoding.UTF8);
-            if (args.Data.Contains("启动成功")) OnStartTrue?.Invoke();
-            else if (args.Data.Contains("[W]") || args.Data.Contains("[E]")) OnStartFalse?.Invoke();
+            File.AppendAllText(logfilePath, logLine + Environment.NewLine, Encoding.UTF8);
+            
+            if (args.Data.Contains("启动成功"))
+            {
+                onStartTrue?.Invoke();
+                return;
+            }
 
+            if (!args.Data.Contains("[W]") && !args.Data.Contains("[E]")) return;
+            
+            frpProcess.Kill();
+            frpProcess.CancelOutputRead();
+            
+            onStartFalse?.Invoke();
+            await Task.Delay(1000);
+            Process.Start(
+                new ProcessStartInfo
+                {
+                    FileName = logfilePath,
+                    UseShellExecute = true
+                });
         };
 
         frpProcess.Start();
