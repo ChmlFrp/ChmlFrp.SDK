@@ -13,20 +13,17 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@main
-      - uses: actions/setup-dotnet@main
 
-      - name: Cache
-        uses: actions/cache@main
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: ${{ runner.os }}-nuget-
-
+          dotnet-version: 'latest'
+          cache: true
+          
       - name: Building
         run: dotnet build -c ${{ matrix.configuration }}
 
       - uses: actions/upload-artifact@main
         with:
           name: ${{ matrix.configuration }}
-          path: |
-            **/bin/**/*.nupkg
+          path: '**/bin/**/*.nupkg'
