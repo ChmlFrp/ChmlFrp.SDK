@@ -13,9 +13,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@main
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@main
         with:
           cache: true
 
