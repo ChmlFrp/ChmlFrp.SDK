@@ -52,7 +52,7 @@ Sign.Signout();
 ## 用户信息
 
 ```csharp
-using ChmlFrp.SDK;
+using ChmlFrp.SDK.API;
 
 // 以email为例
 var userInfo = await User.GetUserInfo();

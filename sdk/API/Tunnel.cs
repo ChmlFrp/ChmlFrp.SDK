@@ -5,7 +5,7 @@ using System.Text.Json;
 #endif
 using System.Linq;
 
-namespace ChmlFrp.SDK;
+namespace ChmlFrp.SDK.API;
 
 public abstract class Tunnel
 {
@@ -16,12 +16,11 @@ public abstract class Tunnel
 
         var parameters = new Dictionary<string, string> { { "token", User.Usertoken } };
         var jObject = await GetApi("https://cf-v2.uapis.cn/tunnel", parameters);
-        if (jObject == null || jObject["msg"]?.ToString() != "获取隧道数据成功") return [];
+        if (jObject == null || (string)jObject["state"] != "success") return [];
 
 #if NETFRAMEWORK
-        var data = jObject["data"] as JArray;
-        if (data == null) return [];
-        foreach (var variable in data) result.Add(variable["name"]?.ToString());
+        if (jObject["data"] is not JArray data) return [];
+        result.AddRange(data.Select(variable => variable["name"]?.ToString()));
 #else
         var data = jObject["data"]?.AsArray();
         if (data == null) return [];
@@ -38,8 +37,7 @@ public abstract class Tunnel
         var parameters = new Dictionary<string, string> { { "token", User.Usertoken } };
         var jObject = await GetApi("https://cf-v2.uapis.cn/tunnel", parameters);
         if (jObject == null) return null;
-        var msg = jObject["msg"]?.ToString();
-        if (msg != "获取隧道数据成功") return null;
+        if ((string)jObject["state"] != "success") return null;
 
 #if NETFRAMEWORK
         var data = jObject["data"] as JArray;
@@ -69,7 +67,7 @@ public abstract class Tunnel
         };
 
         var jObject = await GetApi("https://cf-v2.uapis.cn/tunnel_config", parameters);
-        if (jObject["msg"]?.ToString() != "配置文件获取成功") return null;
+        if ((string)jObject["state"] != "success") return null;
 
         return (string)jObject["data"]!;
     }

@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 
-namespace ChmlFrp.SDK;
+namespace ChmlFrp.SDK.API;
 
 public abstract class Http
 {

@@ -1,4 +1,4 @@
-﻿namespace ChmlFrp.SDK;
+﻿namespace ChmlFrp.SDK.API;
 
 public abstract class Sign
 {
@@ -24,11 +24,10 @@ public abstract class Sign
         if (jObject == null) return "网络异常，请检查网络连接";
 
         var msg = jObject["msg"]?.ToString();
-        var usertoken = jObject["data"]?["usertoken"]?.ToString();
-
         Paths.WritingLog($"Login results: {msg}");
-        if (msg != "登录成功") return msg;
+        if ((string)jObject["state"] != "success") return msg;
 
+        var usertoken = jObject["data"]?["usertoken"]?.ToString();
         User.Save(name, password, usertoken);
         IsSignin = true;
         return msg;

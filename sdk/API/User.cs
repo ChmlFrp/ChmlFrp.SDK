@@ -3,7 +3,7 @@
 using System.Text.Json;
 #endif
 
-namespace ChmlFrp.SDK;
+namespace ChmlFrp.SDK.API;
 
 public abstract class User
 {
@@ -51,8 +51,7 @@ public abstract class User
         var jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", parameters);
         if (jObject == null) return null;
 
-        var msg = jObject["msg"]?.ToString();
-        if (msg != "请求成功") return null;
+        if ((string)jObject["state"] != "success") return null;
         var data = jObject["data"];
 #if NETFRAMEWORK
         return data?.ToObject<UserInfo>();
@@ -79,5 +78,36 @@ public abstract class User
         public int integral { get; set; }
         public int total_upload { get; set; }
         public int total_download { get; set; }
+    }
+    
+    public static async Task<bool> ChangePassword(string newPassword)
+    {
+        var parameters = new Dictionary<string, string>
+        {
+            { "original_password", Password },
+            {"new_password", newPassword },
+            { "token", Usertoken }
+        };
+        var jObject = await GetApi("http://cf-v2.uapis.cnupdate_username", parameters);
+        return (string)jObject["state"] == "success";
+    }
+    
+    public static async Task<bool> ChangeQQ(string newQQ)
+    {
+        var parameters = new Dictionary<string, string>
+        {
+            { "original_password", Password },
+            { "new_qq", newQQ },
+        };
+        var jObject = await GetApi("http://cf-v2.uapis.cn/update_qq", parameters);
+        return (string)jObject["state"] == "success";
+    }
+
+    public static async void ChangeToken()
+    {
+        var parameters = new Dictionary<string, string> { { "token", Usertoken } };
+        var jObject = await GetApi("http://cf-v2.uapis.cn/update_qq", parameters);
+        if ((string)jObject["state"] != "success") return;
+        await Sign.Signin();
     }
 }
