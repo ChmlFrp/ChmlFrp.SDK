@@ -1,11 +1,4 @@
-﻿#if NETFRAMEWORK
-using Newtonsoft.Json.Linq;
-
-#else
-using System.Text.Json.Nodes;
-#endif
-
-namespace ChmlFrp.SDK.API;
+﻿namespace ChmlFrp.SDK;
 
 public abstract class Sign
 {
@@ -27,16 +20,11 @@ public abstract class Sign
             { "password", $"{password}" }
         };
 
-        var jObject = await Constant.GetApi("https://cf-v2.uapis.cn/login", parameters);
+        var jObject = await GetApi("https://cf-v2.uapis.cn/login", parameters);
         if (jObject == null) return "网络异常，请检查网络连接";
 
-#if NETFRAMEWORK
-        var msg = ((JObject)jObject)["msg"]?.ToString();
-        var usertoken = ((JObject)jObject)["data"]?["usertoken"]?.ToString();
-#else
-        var msg = ((JsonNode)jObject)?["msg"]?.ToString();
-        var usertoken = ((JsonNode)jObject)?["data"]?["usertoken"]?.ToString();
-#endif
+        var msg = jObject["msg"]?.ToString();
+        var usertoken = jObject["data"]?["usertoken"]?.ToString();
 
         Paths.WritingLog($"Login results: {msg}");
         if (msg != "登录成功") return msg;

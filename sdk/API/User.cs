@@ -1,11 +1,6 @@
-﻿using ChmlFrp.SDK.API;
-using Microsoft.Win32;
-#if NETFRAMEWORK
-using Newtonsoft.Json.Linq;
-
-#else
+﻿using Microsoft.Win32;
+#if NET
 using System.Text.Json;
-using System.Text.Json.Nodes;
 #endif
 
 namespace ChmlFrp.SDK;
@@ -15,38 +10,37 @@ public abstract class User
     private static readonly RegistryKey Key =
         Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
 
-    public static string Username;
-    public static string Password;
-    public static string Usertoken;
-
-    static User()
+    public static string Username
     {
-        Load();
+        get => Key.GetValue("username")?.ToString() ?? string.Empty;
+        set => Key.SetValue("username", value);
     }
 
-    private static void Load()
+    public static string Password
     {
-        Username = Key.GetValue("username")?.ToString();
-        Password = Key.GetValue("password")?.ToString();
-        Usertoken = Key.GetValue("usertoken")?.ToString();
+        get => Key.GetValue("password")?.ToString() ?? string.Empty;
+        set => Key.SetValue("password", value);
+    }
+
+    public static string Usertoken
+    {
+        get => Key.GetValue("usertoken")?.ToString() ?? string.Empty;
+        set => Key.SetValue("usertoken", value);
     }
 
     public static void Save(string username, string password, string usertoken = null)
     {
-        if (username != null) Key.SetValue("username", username);
-        if (password != null) Key.SetValue("password", password);
-        if (usertoken != null) Key.SetValue("usertoken", usertoken);
-
-        Load();
+        Username = username;
+        Password = password;
+        if (!string.IsNullOrEmpty(usertoken))
+            Usertoken = usertoken;
     }
 
     public static void Clear()
     {
-        Key.DeleteValue("username");
-        Key.DeleteValue("password");
-        Key.DeleteValue("usertoken");
-
-        Load();
+        Username = "";
+        Password = "";
+        Usertoken = "";
     }
 
     public static async Task<UserInfo> GetUserInfo()
@@ -54,21 +48,18 @@ public abstract class User
         if (!Sign.IsSignin) return null;
 
         var parameters = new Dictionary<string, string> { { "token", Usertoken } };
-        var jObject = await Constant.GetApi("https://cf-v2.uapis.cn/userinfo", parameters);
+        var jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", parameters);
         if (jObject == null) return null;
 
-#if NETFRAMEWORK
-        var msg = ((JObject)jObject)["msg"]?.ToString();
+        var msg = jObject["msg"]?.ToString();
         if (msg != "请求成功") return null;
-        var data = ((JObject)jObject)["data"];
+        var data = jObject["data"];
+#if NETFRAMEWORK
         return data?.ToObject<UserInfo>();
 #else
-    var msg = ((JsonNode)jObject)?["msg"]?.ToString();
-    if (msg != "请求成功") return null;
-    var data = ((JsonNode)jObject)?["data"];
-    return data is not null
-        ? JsonSerializer.Deserialize<UserInfo>(data.ToJsonString())
-        : null;
+        return data is not null
+            ? JsonSerializer.Deserialize<UserInfo>(data.ToJsonString())
+            : null;
 #endif
     }
 

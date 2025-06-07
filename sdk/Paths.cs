@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 
 namespace ChmlFrp.SDK;
 
@@ -12,7 +13,7 @@ public abstract class Paths
 
     public static readonly string FrpcPath = Path.Combine(DataPath, "frpc.exe");
 
-    public static List<string> CreateDictionaryList =
+    public static List<string> CreateDirectoryList =
     [
         $"{DataPath}"
     ];
@@ -24,12 +25,14 @@ public abstract class Paths
     public static void Init(string logName)
     {
         LogFilePath = Path.Combine(DataPath, $"Debug-{logName}.logs");
+        Directory.CreateDirectory(DataPath);
         using (var fs = new FileStream(LogFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
         {
             fs.Close();
         }
+
         File.WriteAllText(LogFilePath, string.Empty);
-        foreach (var path in CreateDictionaryList) Directory.CreateDirectory(path);
+        foreach (var path in CreateDirectoryList) Directory.CreateDirectory(path);
         if (!IsFrpcExists) GetFrpc();
         WritingLog("ChmlFrp SDK initialized.");
     }
@@ -49,19 +52,19 @@ public abstract class Paths
             WritingLog("frpc.exe already exists. No need to download.");
             return;
         }
-        
+
         var tempFileName = Path.GetTempFileName();
-        _ = await Constant.GetFile(
+        _ = await GetFile(
             "https://gitcode.com/Qyzgj/cat2/releases/download/frpc/frpc.zip",
             tempFileName);
-        
-        if (!File.Exists(tempFileName) || new FileInfo(tempFileName).Length == 0)
+
+        if (!File.Exists(tempFileName))
         {
             WritingLog("frpc.exe download failed. File is empty or does not exist.");
             return;
         }
-        
-        System.IO.Compression.ZipFile.ExtractToDirectory(tempFileName, DataPath);
+
+        ZipFile.ExtractToDirectory(tempFileName, DataPath);
         WritingLog($"frpc.exe downloaded successfully.File exists: {IsFrpcExists}");
     }
 }

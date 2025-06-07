@@ -5,23 +5,23 @@ using System.Linq;
 using System.Management;
 using System.Text.RegularExpressions;
 
-namespace ChmlFrp.SDK.Frpc;
+namespace ChmlFrp.SDK.Services;
 
-public abstract class Stop
+public class Stop
 {
     private static readonly Regex IniPathRegex =
         new(@"-c\s+([^\s]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     public static async void StopTunnel(
         string tunnelName,
-        Action onStopTrue, 
+        Action onStopTrue,
         Action onStopFalse)
     {
         await Task.Run(() =>
         {
             var frpcList = new List<Process>();
             var processes = Process.GetProcessesByName("frpc");
-            
+
             foreach (var process in processes)
             {
                 var searcher = new ManagementObjectSearcher(
@@ -34,11 +34,11 @@ public abstract class Stop
                 var iniPath = matchResult.Success
                     ? matchResult.Groups[1].Value
                     : Path.Combine(Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "", "frpc.ini");
-                
+
                 try
                 {
                     var data = File.ReadAllText(iniPath);
-                    if (data.Contains($"[{tunnelName}]")) 
+                    if (data.Contains($"[{tunnelName}]"))
                         frpcList.Add(process);
                 }
                 catch
@@ -53,10 +53,10 @@ public abstract class Stop
                 return;
             }
 
-            foreach (var frpcProcess in frpcList) 
+            foreach (var frpcProcess in frpcList)
                 frpcProcess.Kill();
         });
-        
+
         onStopTrue?.Invoke();
     }
 
@@ -78,7 +78,7 @@ public abstract class Stop
                 var iniPath = matchResult.Success
                     ? matchResult.Groups[1].Value
                     : Path.Combine(Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "", "frpc.ini");
-                
+
                 try
                 {
                     var data = File.ReadAllText(iniPath);
