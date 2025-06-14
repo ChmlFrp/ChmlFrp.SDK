@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Version>0.1.3</Version>
+        <Version>0.1.4</Version>
         <Authors>By Qusay</Authors>
         <LangVersion>latest</LangVersion>
         <PackageId>ChmlFrp.SDK</PackageId>

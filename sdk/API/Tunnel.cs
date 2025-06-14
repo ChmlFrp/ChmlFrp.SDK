@@ -11,8 +11,8 @@ public abstract class Tunnel
 {
     public static async Task<List<string>> GetTunnelNames()
     {
+        if (!Sign.IsSignin) return [];
         var result = new List<string>();
-        if (!Sign.IsSignin) return result;
 
         var parameters = new Dictionary<string, string> { { "token", User.Usertoken } };
         var jObject = await GetApi("https://cf-v2.uapis.cn/tunnel", parameters);
@@ -36,8 +36,7 @@ public abstract class Tunnel
 
         var parameters = new Dictionary<string, string> { { "token", User.Usertoken } };
         var jObject = await GetApi("https://cf-v2.uapis.cn/tunnel", parameters);
-        if (jObject == null) return null;
-        if ((string)jObject["state"] != "success") return null;
+        if (jObject == null && (string)jObject["state"] != "success") return null;
 
 #if NETFRAMEWORK
         var data = jObject["data"] as JArray;
@@ -46,9 +45,7 @@ public abstract class Tunnel
 #else
         var data = jObject["data"]?.AsArray();
         var tunnel = data?.FirstOrDefault(t => t?["name"]?.ToString() == name);
-        return tunnel != null
-            ? JsonSerializer.Deserialize<TunnelInfo>(tunnel.ToJsonString())
-            : null;
+        return JsonSerializer.Deserialize<TunnelInfo>(tunnel!.ToJsonString());
 #endif
     }
 

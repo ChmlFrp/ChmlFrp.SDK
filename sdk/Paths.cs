@@ -26,6 +26,7 @@ public abstract class Paths
     {
         LogFilePath = Path.Combine(DataPath, $"Debug-{logName}.logs");
         Directory.CreateDirectory(DataPath);
+
         using (var fs = new FileStream(LogFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
         {
             fs.Close();

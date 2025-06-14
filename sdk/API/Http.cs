@@ -60,7 +60,11 @@ public abstract class Http
     {
         try
         {
+#if NETFRAMEWORK
             File.WriteAllBytes(path, await Client.GetByteArrayAsync(url));
+#elif NET
+            await File.WriteAllBytesAsync(path, await Client.GetByteArrayAsync(url));
+#endif
         }
         catch
         {

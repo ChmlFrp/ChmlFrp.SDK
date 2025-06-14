@@ -1,4 +1,6 @@
-﻿namespace ChmlFrp.SDK.API;
+﻿using static ChmlFrp.SDK.API.User;
+
+namespace ChmlFrp.SDK.API;
 
 public abstract class Sign
 {
@@ -6,36 +8,33 @@ public abstract class Sign
 
     public static async Task<string> Signin(string name = null, string password = null)
     {
-        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(password))
+        if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(password))
         {
-            password = User.Password;
-            name = User.Username;
+            var parameters = new Dictionary<string, string>
+            {
+                { "username", $"{name}" },
+                { "password", $"{password}" }
+            };
+            var jObject = await GetApi("https://cf-v2.uapis.cn/login", parameters);
+            if (jObject == null || (string)jObject["state"] != "success") return jObject?["msg"]?.ToString();
+
+            Usertoken = jObject["data"]?["usertoken"]?.ToString();
+        }
+        else
+        {
+            var parameters = new Dictionary<string, string> { { "token", Usertoken } };
+            var jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", parameters);
+
+            if (jObject == null || (string)jObject["state"] != "success") return null;
         }
 
-        User.Save(name, password);
-
-        var parameters = new Dictionary<string, string>
-        {
-            { "username", $"{name}" },
-            { "password", $"{password}" }
-        };
-
-        var jObject = await GetApi("https://cf-v2.uapis.cn/login", parameters);
-        if (jObject == null) return "网络异常，请检查网络连接";
-
-        var msg = jObject["msg"]?.ToString();
-        Paths.WritingLog($"Login results: {msg}");
-        if ((string)jObject["state"] != "success") return msg;
-
-        var usertoken = jObject["data"]?["usertoken"]?.ToString();
-        User.Save(name, password, usertoken);
         IsSignin = true;
-        return msg;
+        return "登录成功";
     }
 
     public static void Signout()
     {
-        User.Clear();
+        Usertoken = "";
         IsSignin = false;
     }
 }

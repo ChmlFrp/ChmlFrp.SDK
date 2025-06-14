@@ -5,7 +5,7 @@
 在开始使用 SDK 之前，请确保：
 
 1. 已通过 NuGet 安装 `ChmlFrp.SDK` 包
-2.了解基本的异步编程概念
+   2.了解基本的异步编程概念
 
 ## 核心类型概览
 
@@ -23,7 +23,8 @@ SDK 主要包含以下核心类型：
 - 请妥善保管用户凭据，建议使用安全的配置管理方式
 - 确保应用具有足够的文件系统权限以进行日志写入和配置文件操作
 
-以下主要介绍了如何在 .NET 项目中集成和调用 ChmlFrp.SDK 的常用功能，包括登录、登出、获取用户信息、隧道管理、文件目录初始化等。每个功能都配有简明的 C# 示例代码，便于开发者快速上手。所有接口均为异步方法，适合现代 .NET 应用开发。
+以下主要介绍了如何在 .NET 项目中集成和调用 ChmlFrp.SDK 的常用功能，包括登录、登出、获取用户信息、隧道管理、文件目录初始化等。每个功能都配有简明的
+C# 示例代码，便于开发者快速上手。所有接口均为异步方法，适合现代 .NET 应用开发。
 
 <br/>
 
@@ -32,8 +33,6 @@ SDK 主要包含以下核心类型：
 ```csharp
 using ChmlFrp.SDK.API;
 
-// 之前输入的用户名和密码
-YourTextBox.Text = User.Username; 
 // 登录状态的提示
 var msg = await Sign.Signin(【你的用户名】,【你的密码】);
 Console.WriteLine(msg);
@@ -98,7 +97,9 @@ using System.IO;
 using ChmlFrp.SDK;
 
 // 可以自定义创建文件夹
-CreateDictionaryList.Add(Path.Combine(Paths.DataPath, 【文件夹名】));
+Paths.CreateDictionaryList.Add(
+    Path.Combine(Paths.DataPath, 
+   【文件夹名】));
 
 // 在Init时创建文件夹，日志文件和下载FRPC文件
 Paths.Init(【你的启动器缩写】);
