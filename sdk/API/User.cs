@@ -16,6 +16,8 @@ public abstract class User
         set => Key.SetValue("usertoken", value);
     }
 
+    public static string Userid;
+
     public static async Task<UserInfo> GetUserInfo()
     {
         if (!Sign.IsSignin) return null;

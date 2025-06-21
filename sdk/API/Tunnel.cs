@@ -34,6 +34,29 @@ public abstract class Tunnel
         return result;
     }
 
+    public static async Task<List<TunnelInfo>> GetTunnelsData()
+    {
+        if (!Sign.IsSignin) return [];
+
+        var jObject = await GetApi("https://cf-v2.uapis.cn/tunnel", new Dictionary<string, string>
+        {
+            { "token", User.Usertoken }
+        });
+
+        if (jObject == null || (string)jObject["state"] != "success") return [];
+
+#if NETFRAMEWORK
+        if (jObject["data"] is not JArray data) return [];
+        return data.Select(t => t.ToObject<TunnelInfo>()).Where(t => t != null).ToList();
+#else
+    if (jObject["data"] is not JsonArray data) return [];
+    return data
+        .Select(t => t == null ? null : JsonSerializer.Deserialize<TunnelInfo>(t.ToJsonString()))
+        .Where(t => t != null)
+        .ToList();
+#endif
+    }
+
     public static async Task<TunnelInfo> GetTunnelData(string name)
     {
         if (!Sign.IsSignin) return null;
@@ -88,5 +111,38 @@ public abstract class Tunnel
         public int today_traffic_in { get; set; } // 今日该隧道上传流量
         public int today_traffic_out { get; set; } // 今日该隧道下载流量
         public int cur_conns { get; set; } // 当前隧道连接数
+    }
+
+    public static async void DeleteTunnel(string tunnelName)
+    {
+        if (!Sign.IsSignin) return;
+        var tunnelData = await GetTunnelData(tunnelName);
+        if (tunnelData == null) return;
+        await GetApi("https://cf-v1.uapis.cn/api/deletetl.php", new Dictionary<string, string>
+        {
+            { "token", User.Usertoken },
+            { "userid", User.Userid },
+            { "nodeid", tunnelData.id.ToString() }
+        });
+    }
+    
+    public static async Task<string> CreateTunnel(string tunnelName, string nodeName, string type,string localport,string remoteport)
+    {
+        if (!Sign.IsSignin) return null;
+        var jObject = await GetApi("https://cf-v1.uapis.cn/api/tunnel.php", new Dictionary<string, string>
+        {
+            { "token", User.Usertoken },
+            { "userid", User.Userid},
+            { "name", tunnelName },
+            { "node", nodeName },
+            { "type", type },
+            { "localip","127.0.0.1" },
+            { "nport", localport },
+            { "dorp", remoteport },
+            { "encryption", "false" },
+            { "compression", "false" },
+            { "ap" , "cat2" }
+        });
+        return jObject["error"]?.ToString();
     }
 }

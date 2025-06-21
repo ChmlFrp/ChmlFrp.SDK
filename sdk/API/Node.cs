@@ -30,10 +30,10 @@ public abstract class Node
     {
         public int id { get; set; }
         public string name { get; set; }
-        public string area { get; set; }
+        public string notes { get; set; }
         public string nodegroup { get; set; }
-        public bool china { get; set; }
-        public bool web { get; set; }
-        public bool udp { get; set; }
+        public string china { get; set; }
+        public string web { get; set; }
+        public string udp { get; set; }
     }
 }

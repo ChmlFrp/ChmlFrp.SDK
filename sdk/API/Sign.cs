@@ -19,6 +19,7 @@ public abstract class Sign
             if (jObject == null || (string)jObject["state"] != "success") return jObject?["msg"]?.ToString();
 
             Usertoken = jObject["data"]?["usertoken"]?.ToString();
+            Userid = jObject["data"]?["id"]?.ToString();
         }
         else
         {
@@ -26,6 +27,7 @@ public abstract class Sign
             var jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", parameters);
 
             if (jObject == null || (string)jObject["state"] != "success") return null;
+            Userid = jObject["data"]?["id"]?.ToString();
         }
 
         IsSignin = true;
