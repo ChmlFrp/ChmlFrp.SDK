@@ -10,13 +10,13 @@ public abstract class User
     private static readonly RegistryKey Key =
         Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
 
+    public static string Userid;
+
     public static string Usertoken
     {
         get => Key.GetValue("usertoken")?.ToString();
         set => Key.SetValue("usertoken", value);
     }
-
-    public static string Userid;
 
     public static async Task<UserInfo> GetUserInfo()
     {

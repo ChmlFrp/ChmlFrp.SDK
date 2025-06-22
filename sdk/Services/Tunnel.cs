@@ -13,6 +13,7 @@ namespace ChmlFrp.SDK.Services;
 public abstract class Tunnel
 {
     public static readonly Dictionary<string, string> TunnelFiles = new();
+
     private static readonly Regex IniPathRegex =
         new(@"-c\s+([^\s]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -47,7 +48,7 @@ public abstract class Tunnel
         var logfilePath = Path.Combine(Paths.DataPath, $"{tunnelName}.log");
         File.WriteAllText(inifilePath, iniData);
         File.WriteAllText(logfilePath, string.Empty);
-        TunnelFiles.Add(tunnelName,inifilePath);
+        TunnelFiles.Add(tunnelName, inifilePath);
         Paths.WritingLog($"Starting tunnel: {tunnelName}");
 
         var frpProcess = new Process
@@ -113,10 +114,13 @@ public abstract class Tunnel
             foreach (var process in Process.GetProcessesByName("frpc"))
                 if (FindingData(process).Contains($"[{tunnelName}]"))
                     process.Kill();
-            
+
             if (TunnelFiles.TryGetValue(tunnelName, out var iniFilePath))
             {
-                try { File.Delete(iniFilePath); }
+                try
+                {
+                    File.Delete(iniFilePath);
+                }
                 catch
                 {
                     // ignored

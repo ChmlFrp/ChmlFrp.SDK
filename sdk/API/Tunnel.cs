@@ -1,11 +1,11 @@
-﻿#if NETFRAMEWORK
+﻿using System;
+using System.Linq;
+#if NETFRAMEWORK
 using Newtonsoft.Json.Linq;
 #else
 using System.Text.Json;
 using System.Text.Json.Nodes;
 #endif
-using System;
-using System.Linq;
 
 namespace ChmlFrp.SDK.API;
 
@@ -96,23 +96,6 @@ public abstract class Tunnel
         return (string)jObject["data"]!;
     }
 
-    public class TunnelInfo
-    {
-        public int id { get; set; } // 隧道id
-        public string ip { get; set; } // 隧道ip
-        public string dorp { get; set; } // 外网端口/连接域名
-        public string name { get; set; } // 隧道名
-        public string node { get; set; } // 所属节点
-        public string state { get; set; } // 隧道状态
-        public string nodestate { get; set; } // 隧道状态
-        public string type { get; set; } // 隧道类型
-        public string localip { get; set; } // 内网ip
-        public int nport { get; set; } // 内网端口
-        public int today_traffic_in { get; set; } // 今日该隧道上传流量
-        public int today_traffic_out { get; set; } // 今日该隧道下载流量
-        public int cur_conns { get; set; } // 当前隧道连接数
-    }
-
     public static async void DeleteTunnel(string tunnelName)
     {
         if (!Sign.IsSignin) return;
@@ -125,10 +108,18 @@ public abstract class Tunnel
             { "nodeid", tunnelData.id.ToString() }
         });
     }
-    
-    public static async Task<string> CreateTunnel(string tunnelName, string nodeName, string type,string localport,string remoteport)
+
+    public static async Task<string> CreateTunnel(string nodeName, string type, string localport, string remoteport)
     {
         if (!Sign.IsSignin) return null;
+
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+        var result = new char[8];
+        for (var i = 0; i < 8; i++)
+            result[i] = chars[random.Next(chars.Length)];
+        var tunnelName = new string(result);
+        
         var jObject = await GetApi("https://cf-v1.uapis.cn/api/tunnel.php", new Dictionary<string, string>
         {
             { "token", User.Usertoken },
@@ -144,5 +135,22 @@ public abstract class Tunnel
             { "ap" , "cat2" }
         });
         return jObject["error"]?.ToString();
+    }
+
+    public class TunnelInfo
+    {
+        public int id { get; set; } // 隧道id
+        public string ip { get; set; } // 隧道ip
+        public string dorp { get; set; } // 外网端口/连接域名
+        public string name { get; set; } // 隧道名
+        public string node { get; set; } // 所属节点
+        public string state { get; set; } // 隧道状态
+        public string nodestate { get; set; } // 隧道状态
+        public string type { get; set; } // 隧道类型
+        public string localip { get; set; } // 内网ip
+        public int nport { get; set; } // 内网端口
+        public int today_traffic_in { get; set; } // 今日该隧道上传流量
+        public int today_traffic_out { get; set; } // 今日该隧道下载流量
+        public int cur_conns { get; set; } // 当前隧道连接数
     }
 }

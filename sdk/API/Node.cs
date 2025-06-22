@@ -1,6 +1,4 @@
 ﻿#if NETFRAMEWORK
-using Newtonsoft.Json.Linq;
-
 #else
 using System.Text.Json;
 #endif
