@@ -115,4 +115,4 @@ Console.WriteLine(Paths.IsFrpcExists.ToString());
 
 ## 启动和关闭隧道
 
-关于启动和关闭隧道，相关使用请查看[CAT2示例代码](https://github.com/ChmlFrp/CAT2/blob/main/cat2/ViewModel.cs#L232)。
+关于启动和关闭隧道，相关使用请查看[CAT2示例代码](https://github.com/ChmlFrp/CAT2/blob/main/cat2/ViewModels/TunnelPageViewModel.cs#L144)。
