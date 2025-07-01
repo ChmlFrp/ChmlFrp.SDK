@@ -31,19 +31,6 @@ public abstract class Paths
         {
             fs.Close();
         }
-        
-  
-        foreach (var logFile in Directory.GetFiles(DataPath, "*.log"))
-        {
-            try
-            {
-                File.Delete(logFile);
-            }
-            catch
-            {
-                // ignored
-            }
-        }
 
         File.WriteAllText(LogFilePath, string.Empty);
         foreach (var path in CreateDirectoryList) Directory.CreateDirectory(path);
