@@ -132,7 +132,7 @@ public abstract class Tunnel
             { "dorp", remoteport },
             { "encryption", "false" },
             { "compression", "false" },
-            { "ap" , "cat2" }
+            { "ap" , "# 由CAT2生成的隧道配置文件" }
         });
         return jObject["error"]?.ToString();
     }
