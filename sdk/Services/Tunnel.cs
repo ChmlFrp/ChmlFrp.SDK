@@ -69,8 +69,12 @@ public abstract class Tunnel
                 .Replace(inifilePath, "{IniFile}");
             const string pattern = @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[A-Z]\] \[[^\]]+\] ?";
             logLine = Replace(logLine, pattern, "");
-            File.AppendAllText(logfilePath, logLine + Environment.NewLine, Encoding.UTF8);
-
+            using (var fs = new FileStream(logfilePath, FileMode.Append, FileAccess.Write, FileShare.None))
+            using (var sw = new StreamWriter(fs, Encoding.UTF8))
+            {
+                await sw.WriteLineAsync(logLine);
+            }
+            
             if (args.Data.Contains("启动配置文件的frpc服务"))
             {
                 try
