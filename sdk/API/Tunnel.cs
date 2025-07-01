@@ -66,14 +66,14 @@ public abstract class Tunnel
             { "token", User.Usertoken }
         });
 
-        if (jObject == null && (string)jObject["state"] != "success") return null;
+        if (jObject == null || (string)jObject["state"] != "success") return null;
 
 #if NETFRAMEWORK
         return jObject["data"]?.FirstOrDefault(t => t["name"]?.ToString() == name)?.ToObject<TunnelInfo>();
 #else
-        if (jObject["data"] is not JsonArray data) return null;
-        return JsonSerializer.Deserialize<TunnelInfo>(data.FirstOrDefault(t => t?["name"]?.ToString() == name)!
-            .ToJsonString());
+    if (jObject["data"] is not JsonArray data) return null;
+    return JsonSerializer.Deserialize<TunnelInfo>(data.FirstOrDefault(t => t?["name"]?.ToString() == name)!
+        .ToJsonString());
 #endif
     }
 

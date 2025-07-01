@@ -128,28 +128,55 @@ public abstract class Tunnel
             onStopTrue?.Invoke();
         });
     }
-
+    
     public static async Task<bool> IsTunnelRunning(string tunnelName)
     {
         return await Task.Run(() =>
         {
             return Process.GetProcessesByName("frpc")
-                .Any(process => FindingData(process).Contains($"[{tunnelName}]"));
+                .Any(process =>
+                    process != null &&
+                    (FindingData(process)?.Contains($"[{tunnelName}]") ?? false));
         });
     }
-
+    
     private static string FindingData(Process process)
     {
-        var searcher = new ManagementObjectSearcher(
-            $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}");
-        var commandLine = searcher.Get()
-            .Cast<ManagementObject>()
-            .Select(obj => obj["CommandLine"]?.ToString())
-            .FirstOrDefault();
-        var matchResult = IniPathRegex.Match(commandLine ?? "");
-        var iniPath = matchResult.Success
-            ? matchResult.Groups[1].Value
-            : Path.Combine(Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "", "frpc.ini");
+        if (process == null)
+            return null;
+
+        string commandLine = null;
+        try
+        {
+            var searcher = new ManagementObjectSearcher(
+                $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}");
+            commandLine = searcher.Get()
+                .Cast<ManagementObject>()
+                .Select(obj => obj["CommandLine"]?.ToString())
+                .FirstOrDefault();
+        }
+        catch
+        {
+            // ignored
+        }
+
+        string iniPath = null;
+        try
+        {
+            var matchResult = IniPathRegex.Match(commandLine ?? "");
+            iniPath = matchResult.Success
+                ? matchResult.Groups[1].Value
+                : Path.Combine(
+                    Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "",
+                    "frpc.ini");
+        }
+        catch
+        {
+            // ignored
+        }
+
+        if (string.IsNullOrEmpty(iniPath))
+            return null;
 
         try
         {
