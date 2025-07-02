@@ -70,19 +70,6 @@ public abstract class Tunnel
             const string pattern = @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[A-Z]\] \[[^\]]+\] ?";
             logLine = Replace(logLine, pattern, "");
             File.AppendAllText(logfilePath, logLine + Environment.NewLine, Encoding.UTF8);
-
-            if (args.Data.Contains("启动配置文件的frpc服务"))
-            {
-                try
-                {
-                    File.Delete(inifilePath);
-                }
-                catch
-                {
-                    // ignored
-                }
-                return;
-            }
             
             if (args.Data.Contains("启动成功"))
             {
@@ -108,7 +95,7 @@ public abstract class Tunnel
         frpProcess.BeginOutputReadLine();
     }
 
-    public static async void StopTunnel(
+    public static async Task StopTunnel(
         string tunnelName,
         Action onStopTrue = null,
         Action onStopFalse = null)
@@ -122,62 +109,63 @@ public abstract class Tunnel
         await Task.Run(() =>
         {
             foreach (var process in Process.GetProcessesByName("frpc"))
-                if (FindingData(process).Contains($"[{tunnelName}]"))
-                    process.Kill();
-            
+            {
+                var iniPath = GetIniPathFromProcess(process);
+                if (iniPath == null || !File.Exists(iniPath))
+                    continue;
+
+                var data = File.ReadAllText(iniPath);
+                if (!data.Contains($"[{tunnelName}]")) continue;
+                try
+                {
+                    File.Delete(iniPath);
+                }
+                catch
+                {
+                    // ignored
+                }
+                process.Kill();
+            }
             onStopTrue?.Invoke();
         });
     }
-    
+
     public static async Task<bool> IsTunnelRunning(string tunnelName)
     {
         return await Task.Run(() =>
         {
-            return Process.GetProcessesByName("frpc")
-                .Any(process =>
-                    process != null &&
-                    (FindingData(process)?.Contains($"[{tunnelName}]") ?? false));
+            return Process.GetProcessesByName("frpc").Select(FindingData).Where(data => data != null).Any(data => data.Contains($"[{tunnelName}]"));
         });
     }
     
-    private static string FindingData(Process process)
+    private static string GetIniPathFromProcess(Process process)
     {
-        if (process == null)
-            return null;
-
-        string commandLine = null;
         try
         {
             var searcher = new ManagementObjectSearcher(
                 $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}");
-            commandLine = searcher.Get()
+            var commandLine = searcher.Get()
                 .Cast<ManagementObject>()
                 .Select(obj => obj["CommandLine"]?.ToString())
                 .FirstOrDefault();
-        }
-        catch
-        {
-            // ignored
-        }
-
-        string iniPath = null;
-        try
-        {
             var matchResult = IniPathRegex.Match(commandLine ?? "");
-            iniPath = matchResult.Success
+            return matchResult.Success
                 ? matchResult.Groups[1].Value
-                : Path.Combine(
-                    Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "",
-                    "frpc.ini");
+                : Path.Combine(Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "", "frpc.ini");
         }
         catch
         {
-            // ignored
-        }
-
-        if (string.IsNullOrEmpty(iniPath))
             return null;
+        }
+    }
 
+    private static string FindingData(Process process)
+    {
+        var iniPath = GetIniPathFromProcess(process);
+
+        if (!File.Exists(iniPath))
+            return null;
+        
         try
         {
             var data = File.ReadAllText(iniPath);
