@@ -71,11 +71,7 @@ public abstract class Tunnel
             const string pattern = @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[A-Z]\] \[[^\]]+\] ?";
             logLine = Replace(logLine, pattern, "");
             
-#if NET
-            await File.AppendAllTextAsync(logfilePath, logLine + Environment.NewLine, Encoding.UTF8);
-#else
             File.AppendAllText(logfilePath, logLine + Environment.NewLine);
-#endif
            
             if (args.Data.Contains("启动成功"))
             {
