@@ -1,39 +1,12 @@
 ﻿using System;
 using System.Linq;
-#if NETFRAMEWORK
-using Newtonsoft.Json.Linq;
-#else
 using System.Text.Json;
 using System.Text.Json.Nodes;
-#endif
 
 namespace ChmlFrp.SDK.API;
 
 public abstract class Tunnel
 {
-    public static async Task<List<string>> GetTunnelNames()
-    {
-        if (!Sign.IsSignin) return [];
-        var result = new List<string>();
-
-        var jObject = await GetApi("https://cf-v2.uapis.cn/tunnel", new Dictionary<string, string>
-        {
-            { "token", User.Usertoken }
-        });
-
-        if (jObject == null || (string)jObject["state"] != "success") return [];
-
-#if NETFRAMEWORK
-        if (jObject["data"] is not JArray data) return [];
-        result.AddRange(data.Select(variable => variable["name"]?.ToString()));
-#else
-        if (jObject["data"] is not JsonArray data) return [];
-        result.AddRange(data.Select(variable => variable?["name"]?.GetValue<string>()));
-#endif
-
-        return result;
-    }
-
     public static async Task<List<TunnelInfo>> GetTunnelsData()
     {
         if (!Sign.IsSignin) return [];
@@ -41,20 +14,13 @@ public abstract class Tunnel
         var jObject = await GetApi("https://cf-v2.uapis.cn/tunnel", new Dictionary<string, string>
         {
             { "token", User.Usertoken }
-        });
+        }).ConfigureAwait(false);
 
-        if (jObject == null || (string)jObject["state"] != "success") return [];
+        if (jObject?["state"]?.ToString() != "success" || jObject["data"] is not JsonArray data) return [];
 
-#if NETFRAMEWORK
-        if (jObject["data"] is not JArray data) return [];
-        return data.Select(t => t.ToObject<TunnelInfo>()).Where(t => t != null).ToList();
-#else
-    if (jObject["data"] is not JsonArray data) return [];
-    return data
-        .Select(t => t == null ? null : JsonSerializer.Deserialize<TunnelInfo>(t.ToJsonString()))
-        .Where(t => t != null)
-        .ToList();
-#endif
+        var result = new List<TunnelInfo>(data.Count);
+        result.AddRange(from t in data where t != null select JsonSerializer.Deserialize<TunnelInfo>(t.ToJsonString()) into info where info != null select info);
+        return result;
     }
 
     public static async Task<TunnelInfo> GetTunnelData(string name)
@@ -66,15 +32,11 @@ public abstract class Tunnel
             { "token", User.Usertoken }
         });
 
-        if (jObject == null && (string)jObject["state"] != "success") return null;
+        if (jObject == null || (string)jObject["state"] != "success") return null;
 
-#if NETFRAMEWORK
-        return jObject["data"]?.FirstOrDefault(t => t["name"]?.ToString() == name)?.ToObject<TunnelInfo>();
-#else
         if (jObject["data"] is not JsonArray data) return null;
         return JsonSerializer.Deserialize<TunnelInfo>(data.FirstOrDefault(t => t?["name"]?.ToString() == name)!
             .ToJsonString());
-#endif
     }
 
     public static async Task<string> GetTunnelIniData(string name)
@@ -95,7 +57,7 @@ public abstract class Tunnel
 
         return (string)jObject["data"]!;
     }
-
+    
     public static async void DeleteTunnel(string tunnelName)
     {
         if (!Sign.IsSignin) return;
@@ -132,7 +94,7 @@ public abstract class Tunnel
             { "dorp", remoteport },
             { "encryption", "false" },
             { "compression", "false" },
-            { "ap" , "# 由CAT2生成的隧道配置文件" }
+            { "ap" , "" }
         });
         return jObject["error"]?.ToString();
     }

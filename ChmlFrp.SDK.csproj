@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Version>1.2.1</Version>
+        <Version>1.2.2</Version>
         <Authors>By Qusay</Authors>
         <LangVersion>latest</LangVersion>
         <PackageId>ChmlFrp.SDK</PackageId>
@@ -18,11 +18,9 @@
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\"/>
         <None Include="NugetLogo.png" Pack="true" PackagePath="\"/>
-        <Reference Include="System.Net.Http" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'"/>
-        <Reference Include="System.Management" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'"/>
-        <PackageReference Include="System.Text.Json" Version="9.0.5" Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'"/>
-        <PackageReference Include="System.Management" Version="9.0.5" Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'"/>
+        <PackageReference Include="System.Net.Http" Version="4.3.4" />
+        <PackageReference Include="System.Text.Json" Version="9.0.5"/>
+        <PackageReference Include="System.Management" Version="9.0.5" />
     </ItemGroup>
 
 </Project>

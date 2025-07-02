@@ -1,7 +1,6 @@
 ﻿using Microsoft.Win32;
-#if NET
 using System.Text.Json;
-#endif
+
 
 namespace ChmlFrp.SDK.API;
 
@@ -28,12 +27,8 @@ public abstract class User
 
         if ((string)jObject["state"] != "success") return null;
         var data = jObject["data"];
-
-#if NETFRAMEWORK
-        return data!.ToObject<UserInfo>();
-#else
+        
         return JsonSerializer.Deserialize<UserInfo>(data!.ToJsonString());
-#endif
     }
 
     public class UserInfo

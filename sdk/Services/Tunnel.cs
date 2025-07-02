@@ -44,8 +44,13 @@ public abstract class Tunnel
 
         var inifilePath = Path.GetTempFileName();
         var logfilePath = Path.Combine(Paths.DataPath, $"{tunnelName}.log");
+#if NET
+        await File.WriteAllTextAsync(inifilePath, iniData);
+        await File.WriteAllTextAsync(logfilePath, string.Empty);
+#else
         File.WriteAllText(inifilePath, iniData);
         File.WriteAllText(logfilePath, string.Empty);
+#endif
         Paths.WritingLog($"Starting tunnel: {tunnelName}");
 
         var frpProcess = new Process
@@ -69,8 +74,13 @@ public abstract class Tunnel
                 .Replace(inifilePath, "{IniFile}");
             const string pattern = @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[A-Z]\] \[[^\]]+\] ?";
             logLine = Replace(logLine, pattern, "");
-            File.AppendAllText(logfilePath, logLine + Environment.NewLine, Encoding.UTF8);
             
+#if NET
+            await File.AppendAllTextAsync(logfilePath, logLine + Environment.NewLine, Encoding.UTF8);
+#else
+            File.AppendAllText(logfilePath, logLine + Environment.NewLine);
+#endif
+           
             if (args.Data.Contains("启动成功"))
             {
                 onStartTrue?.Invoke();
@@ -79,7 +89,7 @@ public abstract class Tunnel
 
             if (!args.Data.Contains("[W]") && !args.Data.Contains("[E]")) return;
 
-            StopTunnel(tunnelName);
+            await StopTunnel(tunnelName);
 
             onStartFalse?.Invoke();
             await Task.Delay(1000);
@@ -108,24 +118,34 @@ public abstract class Tunnel
 
         await Task.Run(() =>
         {
-            foreach (var process in Process.GetProcessesByName("frpc"))
+            var processes = Process.GetProcessesByName("frpc");
+            Parallel.ForEach(processes, process =>
             {
                 var iniPath = GetIniPathFromProcess(process);
                 if (iniPath == null || !File.Exists(iniPath))
-                    continue;
+                    return;
 
-                var data = File.ReadAllText(iniPath);
-                if (!data.Contains($"[{tunnelName}]")) continue;
+                string data;
+                try
+                {
+                    data = File.ReadAllText(iniPath);
+                }
+                catch
+                {
+                    return;
+                }
+                if (!data.Contains($"[{tunnelName}]")) return;
+                
                 try
                 {
                     File.Delete(iniPath);
+                    process.Kill();
                 }
                 catch
                 {
                     // ignored
                 }
-                process.Kill();
-            }
+            });
             onStopTrue?.Invoke();
         });
     }
@@ -134,7 +154,29 @@ public abstract class Tunnel
     {
         return await Task.Run(() =>
         {
-            return Process.GetProcessesByName("frpc").Select(FindingData).Where(data => data != null).Any(data => data.Contains($"[{tunnelName}]"));
+            var processes = Process.GetProcessesByName("frpc");
+            var found = false;
+
+            Parallel.ForEach(processes, (process, state) =>
+            {
+                var iniPath = GetIniPathFromProcess(process);
+                if (iniPath == null || !File.Exists(iniPath))
+                    return;
+
+                try
+                {
+                    var data =  File.ReadAllText(iniPath);
+                    if (!data.Contains($"[{tunnelName}]")) return;
+                    found = true;
+                    state.Stop();
+                }
+                catch
+                {
+                    // ignored
+                }
+            });
+
+            return found;
         });
     }
     
@@ -144,38 +186,31 @@ public abstract class Tunnel
         {
             var searcher = new ManagementObjectSearcher(
                 $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}");
-            var commandLine = searcher.Get()
-                .Cast<ManagementObject>()
-                .Select(obj => obj["CommandLine"]?.ToString())
-                .FirstOrDefault();
-            var matchResult = IniPathRegex.Match(commandLine ?? "");
-            return matchResult.Success
-                ? matchResult.Groups[1].Value
-                : Path.Combine(Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "", "frpc.ini");
+            try
+            {
+                var commandLine = searcher.Get()
+                    .Cast<ManagementObject>()
+                    .Select(obj => obj["CommandLine"]?.ToString())
+                    .FirstOrDefault();
+                
+                if (string.IsNullOrWhiteSpace(commandLine))
+                {
+                    return null;
+                }
+       
+                var matchResult = IniPathRegex.Match(commandLine);
+                return matchResult.Success
+                    ? matchResult.Groups[1].Value
+                    : Path.Combine(Path.GetDirectoryName(process.MainModule?.FileName ?? "") ?? "", "frpc.ini");
+            }
+            finally
+            {
+                searcher.Dispose();
+            }
         }
         catch
         {
             return null;
         }
-    }
-
-    private static string FindingData(Process process)
-    {
-        var iniPath = GetIniPathFromProcess(process);
-
-        if (!File.Exists(iniPath))
-            return null;
-        
-        try
-        {
-            var data = File.ReadAllText(iniPath);
-            return data;
-        }
-        catch
-        {
-            // ignored
-        }
-
-        return null;
     }
 }

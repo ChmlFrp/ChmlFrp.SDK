@@ -1,30 +1,18 @@
-﻿#if NETFRAMEWORK
-#else
+﻿using System.Linq;
 using System.Text.Json;
-#endif
 
 namespace ChmlFrp.SDK.API;
 
 public abstract class Node
 {
-    public static async Task<List<Person>> GetNodeData()
+    public static async Task<List<NodeData>> GetNodeData()
     {
         var jObject = await GetApi("https://cf-v2.uapis.cn/node");
         if (jObject == null || (string)jObject["state"] != "success") return [];
-        var list = new List<Person>();
-
-#if NETFRAMEWORK
-        foreach (var variable in jObject["data"])
-            list.Add(variable.ToObject<Person>());
-#elif NET
-        foreach (var variable in jObject["data"]?.AsArray()!)
-            list.Add(JsonSerializer.Deserialize<Person>(variable.ToJsonString())!);
-#endif
-
-        return list;
+        return (from variable in jObject["data"]?.AsArray()! select JsonSerializer.Deserialize<NodeData>(variable.ToJsonString())!).ToList();
     }
 
-    public class Person
+    public class NodeData
     {
         public int id { get; set; }
         public string name { get; set; }
