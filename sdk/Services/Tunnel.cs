@@ -44,13 +44,9 @@ public abstract class Tunnel
 
         var inifilePath = Path.GetTempFileName();
         var logfilePath = Path.Combine(Paths.DataPath, $"{tunnelName}.log");
-#if NET
-        await File.WriteAllTextAsync(inifilePath, iniData);
-        await File.WriteAllTextAsync(logfilePath, string.Empty);
-#else
+        
         File.WriteAllText(inifilePath, iniData);
         File.WriteAllText(logfilePath, string.Empty);
-#endif
         Paths.WritingLog($"Starting tunnel: {tunnelName}");
 
         var frpProcess = new Process
