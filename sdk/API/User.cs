@@ -1,6 +1,5 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System.Text.Json;
-
 
 namespace ChmlFrp.SDK.API;
 
@@ -45,7 +44,7 @@ public abstract class User
         public string realname { get; set; }
         public string regtime { get; set; }
         public int integral { get; set; }
-        public int total_upload { get; set; }
-        public int total_download { get; set; }
+        public long total_upload { get; set; }
+        public long total_download { get; set; }
     }
 }
