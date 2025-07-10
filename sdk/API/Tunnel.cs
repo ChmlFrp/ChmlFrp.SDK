@@ -19,7 +19,12 @@ public abstract class Tunnel
         if (jObject?["state"]?.ToString() != "success" || jObject["data"] is not JsonArray data) return [];
 
         var result = new List<TunnelInfo>(data.Count);
-        result.AddRange(from t in data where t != null select JsonSerializer.Deserialize<TunnelInfo>(t.ToJsonString()) into info where info != null select info);
+        result.AddRange(from t in data
+            where t != null
+            select JsonSerializer.Deserialize<TunnelInfo>(t.ToJsonString())
+            into info
+            where info != null
+            select info);
         return result;
     }
 
@@ -57,7 +62,7 @@ public abstract class Tunnel
 
         return (string)jObject["data"]!;
     }
-    
+
     public static async void DeleteTunnel(string tunnelName)
     {
         if (!Sign.IsSignin) return;
@@ -81,20 +86,20 @@ public abstract class Tunnel
         for (var i = 0; i < 8; i++)
             result[i] = chars[random.Next(chars.Length)];
         var tunnelName = new string(result);
-        
+
         var jObject = await GetApi("https://cf-v1.uapis.cn/api/tunnel.php", new Dictionary<string, string>
         {
             { "token", User.Usertoken },
-            { "userid", User.Userid},
+            { "userid", User.Userid },
             { "name", tunnelName },
             { "node", nodeName },
             { "type", type },
-            { "localip","127.0.0.1" },
+            { "localip", "127.0.0.1" },
             { "nport", localport },
             { "dorp", remoteport },
             { "encryption", "false" },
             { "compression", "false" },
-            { "ap" , "" }
+            { "ap", "" }
         });
         return jObject["error"]?.ToString();
     }

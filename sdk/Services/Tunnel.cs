@@ -44,7 +44,7 @@ public abstract class Tunnel
 
         var inifilePath = Path.GetTempFileName();
         var logfilePath = Path.Combine(Paths.DataPath, $"{tunnelName}.log");
-        
+
         File.WriteAllText(inifilePath, iniData);
         File.WriteAllText(logfilePath, string.Empty);
         Paths.WritingLog($"Starting tunnel: {tunnelName}");
@@ -70,9 +70,9 @@ public abstract class Tunnel
                 .Replace(inifilePath, "{IniFile}");
             const string pattern = @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[A-Z]\] \[[^\]]+\] ?";
             logLine = Replace(logLine, pattern, "");
-            
+
             File.AppendAllText(logfilePath, logLine + Environment.NewLine);
-           
+
             if (args.Data.Contains("启动成功"))
             {
                 onStartTrue?.Invoke();
@@ -126,8 +126,9 @@ public abstract class Tunnel
                 {
                     return;
                 }
+
                 if (!data.Contains($"[{tunnelName}]")) return;
-                
+
                 try
                 {
                     File.Delete(iniPath);
@@ -157,7 +158,7 @@ public abstract class Tunnel
 
                 try
                 {
-                    var data =  File.ReadAllText(iniPath);
+                    var data = File.ReadAllText(iniPath);
                     if (!data.Contains($"[{tunnelName}]")) return;
                     found = true;
                     state.Stop();
@@ -171,7 +172,7 @@ public abstract class Tunnel
             return found;
         });
     }
-    
+
     private static string GetIniPathFromProcess(Process process)
     {
         try
@@ -184,12 +185,9 @@ public abstract class Tunnel
                     .Cast<ManagementObject>()
                     .Select(obj => obj["CommandLine"]?.ToString())
                     .FirstOrDefault();
-                
-                if (string.IsNullOrWhiteSpace(commandLine))
-                {
-                    return null;
-                }
-       
+
+                if (string.IsNullOrWhiteSpace(commandLine)) return null;
+
                 var matchResult = IniPathRegex.Match(commandLine);
                 return matchResult.Success
                     ? matchResult.Groups[1].Value

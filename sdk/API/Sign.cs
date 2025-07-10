@@ -34,14 +34,14 @@ public abstract class Sign
         }
 
         UserInfo = JsonSerializer.Deserialize<UserInfoClass>(jObject["data"]!.ToJsonString());
-        Key.SetValue("usertoken",Usertoken);
+        Key.SetValue("usertoken", Usertoken);
         IsSignin = true;
         return "登录成功";
     }
 
     public static void Signout()
     {
-        Key.SetValue("usertoken","");
+        Key.SetValue("usertoken", "");
         UserInfo = null;
         IsSignin = false;
     }

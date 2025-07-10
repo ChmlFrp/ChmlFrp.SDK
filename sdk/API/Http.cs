@@ -3,13 +3,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Nodes;
 
-
 namespace ChmlFrp.SDK.API;
 
 public abstract class Http
 {
     private static readonly HttpClient Client = new();
-    
+
     public static async Task<JsonNode> GetApi(string url, Dictionary<string, string> parameters = null)
     {
         if (parameters != null)
@@ -31,14 +30,14 @@ public abstract class Http
     }
 
 
-    public static async Task<bool> GetFile(string url, string path)
+    public static Task<bool> GetFile(string url, string path)
     {
         try
         {
-#if NETFRAMEWORK
-            File.WriteAllBytes(path, await Client.GetByteArrayAsync(url));
-#elif NET
+#if NET
             await File.WriteAllBytesAsync(path, await Client.GetByteArrayAsync(url));
+#else
+            File.WriteAllBytes(path, Client.GetByteArrayAsync(url).Result);
 #endif
         }
         catch
@@ -46,6 +45,6 @@ public abstract class Http
             if (File.Exists(path)) File.Delete(path);
         }
 
-        return File.Exists(path) && new FileInfo(path).Length != 0;
+        return Task.FromResult(File.Exists(path) && new FileInfo(path).Length != 0);
     }
 }

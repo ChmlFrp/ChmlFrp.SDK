@@ -4,10 +4,9 @@ namespace ChmlFrp.SDK.API;
 
 public abstract class User
 {
+    public static UserInfoClass UserInfo;
     public static string Userid => UserInfo.id.ToString();
     public static string Usertoken => UserInfo.usertoken;
-
-    public static UserInfoClass UserInfo;
 
     public static async void GetUserInfo()
     {
