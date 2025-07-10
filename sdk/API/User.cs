@@ -1,41 +1,34 @@
-﻿using Microsoft.Win32;
 using System.Text.Json;
-
 
 namespace ChmlFrp.SDK.API;
 
 public abstract class User
 {
-    private static readonly RegistryKey Key =
-        Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
+    public static string Userid => UserInfo.id.ToString();
+    public static string Usertoken => UserInfo.usertoken;
 
-    public static string Userid;
+    public static UserInfoClass UserInfo;
 
-    public static string Usertoken
+    public static async void GetUserInfo()
     {
-        get => Key.GetValue("usertoken")?.ToString();
-        set => Key.SetValue("usertoken", value);
-    }
-
-    public static async Task<UserInfo> GetUserInfo()
-    {
-        if (!Sign.IsSignin) return null;
+        if (!Sign.IsSignin) return;
 
         var parameters = new Dictionary<string, string> { { "token", Usertoken } };
         var jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", parameters);
-        if (jObject == null) return null;
+        if (jObject == null) return;
 
-        if ((string)jObject["state"] != "success") return null;
-        var data = jObject["data"];
-        
-        return JsonSerializer.Deserialize<UserInfo>(data!.ToJsonString());
+        UserInfo = (string)jObject["state"] != "success"
+            ? null
+            : JsonSerializer.Deserialize<UserInfoClass>(jObject["data"]!.ToJsonString());
     }
 
-    public class UserInfo
+    public class UserInfoClass
     {
         public string username { get; set; }
         public string usergroup { get; set; }
         public string userimg { get; set; }
+        public string usertoken { get; set; }
+        public long id { get; set; }
         public string term { get; set; }
         public string qq { get; set; }
         public string email { get; set; }
@@ -45,7 +38,7 @@ public abstract class User
         public string realname { get; set; }
         public string regtime { get; set; }
         public int integral { get; set; }
-        public int total_upload { get; set; }
-        public int total_download { get; set; }
+        public long total_upload { get; set; }
+        public long total_download { get; set; }
     }
 }

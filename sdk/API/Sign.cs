@@ -1,4 +1,7 @@
-﻿using static ChmlFrp.SDK.API.User;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
+using Microsoft.Win32;
+using static ChmlFrp.SDK.API.User;
 
 namespace ChmlFrp.SDK.API;
 
@@ -6,37 +9,40 @@ public abstract class Sign
 {
     public static bool IsSignin;
 
+    private static readonly RegistryKey Key =
+        Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
+
     public static async Task<string> Signin(string name = null, string password = null)
     {
+        JsonNode jObject;
         if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(password))
         {
-            var parameters = new Dictionary<string, string>
+            jObject = await GetApi("https://cf-v2.uapis.cn/login", new Dictionary<string, string>
             {
                 { "username", $"{name}" },
                 { "password", $"{password}" }
-            };
-            var jObject = await GetApi("https://cf-v2.uapis.cn/login", parameters);
+            });
             if (jObject == null || (string)jObject["state"] != "success") return jObject?["msg"]?.ToString();
-
-            Usertoken = jObject["data"]?["usertoken"]?.ToString();
-            Userid = jObject["data"]?["id"]?.ToString();
         }
         else
         {
-            var parameters = new Dictionary<string, string> { { "token", Usertoken } };
-            var jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", parameters);
-
+            jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", new Dictionary<string, string>
+            {
+                { "token", Key.GetValue("usertoken")?.ToString() }
+            });
             if (jObject == null || (string)jObject["state"] != "success") return null;
-            Userid = jObject["data"]?["id"]?.ToString();
         }
 
+        UserInfo = JsonSerializer.Deserialize<UserInfoClass>(jObject["data"]!.ToJsonString());
+        Key.SetValue("usertoken",Usertoken);
         IsSignin = true;
         return "登录成功";
     }
 
     public static void Signout()
     {
-        Usertoken = "";
+        Key.SetValue("usertoken","");
+        UserInfo = null;
         IsSignin = false;
     }
 }
