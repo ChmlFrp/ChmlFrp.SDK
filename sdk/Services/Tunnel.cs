@@ -81,8 +81,7 @@ public abstract class Tunnel
 
             if (!args.Data.Contains("[W]") && !args.Data.Contains("[E]")) return;
 
-            await StopTunnel(tunnelName);
-
+            frpProcess.Kill();
             onStartFalse?.Invoke();
             await Task.Delay(1000);
             Process.Start(
@@ -97,7 +96,8 @@ public abstract class Tunnel
         frpProcess.BeginOutputReadLine();
     }
 
-    public static async Task StopTunnel(
+    public static async Task
+        StopTunnel(
         string tunnelName,
         Action onStopTrue = null,
         Action onStopFalse = null)
