@@ -53,19 +53,7 @@ public abstract class Paths
             WritingLog("frpc.exe already exists. No need to download.");
             return;
         }
-
-        var tempFileName = Path.GetTempFileName();
-        _ = await GetFile(
-            "https://gitcode.com/Qyzgj/cat2/releases/download/frpc/frpc.zip",
-            tempFileName);
-
-        if (!File.Exists(tempFileName))
-        {
-            WritingLog("frpc.exe download failed. File is empty or does not exist.");
-            return;
-        }
-
-        ZipFile.ExtractToDirectory(tempFileName, DataPath);
+        await GetFile("https://www.chmlfrp.cn/dw/windows/amd64/frpc.exe", FrpcPath);
         WritingLog($"frpc.exe downloaded successfully.File exists: {IsFrpcExists}");
     }
 }
