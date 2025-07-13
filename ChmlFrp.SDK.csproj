@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Version>1.2.6</Version>
+        <Version>1.2.8</Version>
         <Authors>By Qusay</Authors>
         <LangVersion>latest</LangVersion>
         <PackageId>ChmlFrp.SDK</PackageId>
@@ -10,18 +10,17 @@
         <Copyright>Copyright © ChmlFrp 2025</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <TargetFramework>netstandard2.0-windows</TargetFramework>
         <RepositoryUrl>https://github.com/ChmlFrp/ChmlFrp.SDK</RepositoryUrl>
         <Description>一个方便.NET开发者开发第三方ChmlFrp客户端的Nuget包。</Description>
-        <TargetFramework>netstandard2.0-windows</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\"/>
         <None Include="NugetLogo.png" Pack="true" PackagePath="\"/>
-        <PackageReference Include="System.Net.Http" Version="*"/>
-        <PackageReference Include="System.Text.Json" Version="*"/>
         <PackageReference Include="System.Management" Version="*"/>
         <PackageReference Include="Microsoft.Win32.Registry" Version="*"/>
+        <PackageReference Include="System.Text.Json" Condition="'$(TargetFrameworkIdentifier)' != '.NET'" Version="*"/>
     </ItemGroup>
 
 </Project>

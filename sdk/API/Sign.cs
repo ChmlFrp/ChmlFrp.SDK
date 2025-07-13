@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.Win32;
 using static ChmlFrp.SDK.API.User;
 
@@ -12,31 +11,29 @@ public abstract class Sign
     private static readonly RegistryKey Key =
         Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
 
-    public static async Task<string> Signin(string name = null, string password = null)
+    public static async Task<string> Signin(string name, string password)
     {
-        JsonNode jObject;
-        if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(password))
+        var jObject = await GetApi("https://cf-v2.uapis.cn/login", new Dictionary<string, string>
         {
-            jObject = await GetApi("https://cf-v2.uapis.cn/login", new Dictionary<string, string>
-            {
-                { "username", $"{name}" },
-                { "password", $"{password}" }
-            });
-            if (jObject == null || (string)jObject["state"] != "success") return jObject?["msg"]?.ToString();
-        }
-        else
-        {
-            jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", new Dictionary<string, string>
-            {
-                { "token", Key.GetValue("usertoken")?.ToString() }
-            });
-            if (jObject == null || (string)jObject["state"] != "success") return null;
-        }
-
+            { "username", $"{name}" },
+            { "password", $"{password}" }
+        });
+        if (jObject == null || (string)jObject["state"] != "success") return (string)jObject?["msg"];
         UserInfo = JsonSerializer.Deserialize<UserInfoClass>(jObject["data"]!.ToJsonString());
         Key.SetValue("usertoken", Usertoken);
         IsSignin = true;
-        return "登录成功";
+        return (string)jObject["msg"];
+    }
+
+    public static async Task Signin()
+    {
+        var jObject = await GetApi("https://cf-v2.uapis.cn/userinfo", new Dictionary<string, string>
+        {
+            { "token", Key.GetValue("usertoken")?.ToString() }
+        });
+        if (jObject == null || (string)jObject["state"] != "success") return;
+        UserInfo = JsonSerializer.Deserialize<UserInfoClass>(jObject["data"]!.ToJsonString());
+        IsSignin = true;
     }
 
     public static void Signout()

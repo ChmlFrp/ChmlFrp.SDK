@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.IO.Compression;
 
 namespace ChmlFrp.SDK;
 
@@ -34,8 +33,21 @@ public abstract class Paths
 
         File.WriteAllText(LogFilePath, string.Empty);
         foreach (var path in CreateDirectoryList) Directory.CreateDirectory(path);
-        if (!IsFrpcExists) GetFrpc();
+
         WritingLog("ChmlFrp SDK initialized.");
+    }
+
+    public static async Task SetFrpc()
+    {
+        if (IsFrpcExists)
+        {
+            WritingLog("frpc.exe already exists. No need to download.");
+        }
+        else
+        {
+            await GetFile("https://www.chmlfrp.cn/dw/windows/amd64/frpc.exe", FrpcPath);
+            WritingLog($"frpc.exe downloaded successfully.File exists: {IsFrpcExists}");
+        }
     }
 
     public static void WritingLog(string logEntry)
@@ -44,16 +56,5 @@ public abstract class Paths
         logEntry = $"[{DateTime.Now}] {logEntry}";
         Console.WriteLine(logEntry);
         File.AppendAllText(LogFilePath, logEntry + Environment.NewLine);
-    }
-
-    public static async void GetFrpc()
-    {
-        if (IsFrpcExists)
-        {
-            WritingLog("frpc.exe already exists. No need to download.");
-            return;
-        }
-        await GetFile("https://www.chmlfrp.cn/dw/windows/amd64/frpc.exe", FrpcPath);
-        WritingLog($"frpc.exe downloaded successfully.File exists: {IsFrpcExists}");
     }
 }

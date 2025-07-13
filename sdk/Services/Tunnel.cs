@@ -98,9 +98,9 @@ public abstract class Tunnel
 
     public static async Task
         StopTunnel(
-        string tunnelName,
-        Action onStopTrue = null,
-        Action onStopFalse = null)
+            string tunnelName,
+            Action onStopTrue = null,
+            Action onStopFalse = null)
     {
         if (!await IsTunnelRunning(tunnelName))
         {
@@ -111,36 +111,78 @@ public abstract class Tunnel
         await Task.Run(() =>
         {
             var processes = Process.GetProcessesByName("frpc");
-            Parallel.ForEach(processes, process =>
+
+            if (processes.Length == 0)
+            {
+                onStopFalse?.Invoke();
+                return;
+            }
+
+            foreach (var process in processes)
             {
                 var iniPath = GetIniPathFromProcess(process);
-                if (iniPath == null || !File.Exists(iniPath))
-                    return;
-
-                string data;
+                if (string.IsNullOrWhiteSpace(iniPath) || !File.Exists(iniPath))
+                    continue;
+                if (!File.ReadAllText(iniPath).Contains($"[{tunnelName}]")) continue;
                 try
                 {
-                    data = File.ReadAllText(iniPath);
-                }
-                catch
-                {
-                    return;
-                }
-
-                if (!data.Contains($"[{tunnelName}]")) return;
-
-                try
-                {
-                    File.Delete(iniPath);
                     process.Kill();
+                    File.Delete(iniPath);
                 }
                 catch
                 {
                     // ignored
                 }
-            });
+            }
+
             onStopTrue?.Invoke();
         });
+    }
+
+    public static async Task<Dictionary<string, bool>> IsTunnelRunning(List<API.Tunnel.TunnelInfo> tunnelsData)
+    {
+        List<string> tunnelNames = [];
+        tunnelNames.AddRange(tunnelsData.Select(tunnel => tunnel.name));
+
+        var processes = Process.GetProcessesByName("frpc");
+        var tunnelStatus = new Dictionary<string, bool>();
+
+        if (tunnelNames.Count == 0)
+            return null;
+
+        if (processes.Length == 0)
+        {
+            foreach (var tunnelName in tunnelNames)
+                tunnelStatus[tunnelName] = false;
+
+            return tunnelStatus;
+        }
+
+        await Task.Run(() =>
+        {
+            foreach (var tunnelName in tunnelNames)
+            {
+                tunnelStatus.Add(tunnelName, false);
+
+                foreach (var process in processes)
+                {
+                    var iniPath = GetIniPathFromProcess(process);
+                    if (string.IsNullOrWhiteSpace(iniPath) || !File.Exists(iniPath))
+                        continue;
+                    try
+                    {
+                        if (!File.ReadAllText(iniPath).Contains($"[{tunnelName}]")) continue;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+
+                    tunnelStatus[tunnelName] = true;
+                }
+            }
+        });
+        return tunnelStatus;
     }
 
     public static async Task<bool> IsTunnelRunning(string tunnelName)
@@ -148,28 +190,27 @@ public abstract class Tunnel
         return await Task.Run(() =>
         {
             var processes = Process.GetProcessesByName("frpc");
-            var found = false;
 
-            Parallel.ForEach(processes, (process, state) =>
+            if (processes.Length == 0)
+                return false;
+
+            foreach (var process in processes)
             {
                 var iniPath = GetIniPathFromProcess(process);
-                if (iniPath == null || !File.Exists(iniPath))
-                    return;
-
+                if (string.IsNullOrWhiteSpace(iniPath) || !File.Exists(iniPath))
+                    continue;
                 try
                 {
-                    var data = File.ReadAllText(iniPath);
-                    if (!data.Contains($"[{tunnelName}]")) return;
-                    found = true;
-                    state.Stop();
+                    if (!File.ReadAllText(iniPath).Contains($"[{tunnelName}]")) continue;
+                    return true;
                 }
                 catch
                 {
                     // ignored
                 }
-            });
+            }
 
-            return found;
+            return false;
         });
     }
 
