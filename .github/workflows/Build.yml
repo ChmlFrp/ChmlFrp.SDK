@@ -7,9 +7,6 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        configuration: [Release]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@main
@@ -18,8 +15,10 @@ jobs:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
-      - run: dotnet build -c ${{ matrix.configuration }}
+      - run: dotnet build -c Release
       - uses: actions/upload-artifact@main
         with:
-          name: ${{ matrix.configuration }}
-          path: '**/bin/**/*.nupkg'
+          name: Release
+          path: |
+            **/*.nupkg
+            **/*.dll

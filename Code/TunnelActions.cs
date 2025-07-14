@@ -1,21 +1,177 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Management;
 using System.Text;
 using System.Text.RegularExpressions;
-using ChmlFrp.SDK.API;
+using static CSDK.UserActions;
 using static System.Text.RegularExpressions.Regex;
+using static CSDK.SetPath;
 
-namespace ChmlFrp.SDK.Services;
+namespace CSDK;
 
-public abstract class Tunnel
+public abstract class TunnelActions
 {
     private static readonly Regex IniPathRegex =
         new(@"-c\s+([^\s]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    public static async void StartTunnel(
+    public static async Task<List<TunnelInfoClass>> GetTunnelListAsync()
+    {
+        var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/tunnel", new Dictionary<string, string>
+        {
+            {
+                "token", Usertoken
+            }
+        });
+
+        if (jsonNode == null || (string)jsonNode["state"] != "success") return [];
+
+        var data = (JsonArray)jsonNode["data"];
+        var result = new List<TunnelInfoClass>(data!.Count);
+        result.AddRange(data.Where(t => t != null)
+            .Select(t => JsonSerializer.Deserialize<TunnelInfoClass>(t.ToJsonString()))
+            .Where(info => info != null));
+        return result;
+    }
+
+    public static async Task<TunnelInfoClass> GetTunnelAsync
+    (
+        string tunnelName
+    )
+    {
+        var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/tunnel", new Dictionary<string, string>
+        {
+            {
+                "token", Usertoken
+            }
+        });
+
+        if (jsonNode == null || (string)jsonNode["state"] != "success") return null;
+
+        var data = (JsonArray)jsonNode["data"];
+        return JsonSerializer.Deserialize<TunnelInfoClass>(
+            data!.FirstOrDefault(t => t?["name"]?.ToString() == tunnelName)!
+                .ToJsonString());
+    }
+
+
+    public static async Task<string> GetIniStringAsync
+    (
+        string tunnelName
+    )
+    {
+        var tunnelInfo = await GetTunnelAsync(tunnelName);
+        if (tunnelInfo == null) return null;
+
+        var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/tunnel_config", new Dictionary<string, string>
+        {
+            {
+                "token", $"{Usertoken}"
+            },
+            {
+                "node", $"{tunnelInfo.node}"
+            },
+            {
+                "tunnel_names", $"{tunnelName}"
+            }
+        });
+
+        if ((string)jsonNode["state"] != "success") return null;
+        return (string)jsonNode["data"]!;
+    }
+
+    public static async Task<bool> DeleteTunnelAsync
+    (
+        string tunnelName
+    )
+    {
+        var tunnelInfo = await GetTunnelAsync(tunnelName);
+        if (tunnelInfo == null) return false;
+
+        var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/deletetl.php", new Dictionary<string, string>
+        {
+            {
+                "token", Usertoken
+            },
+            {
+                "userid", Userid
+            },
+            {
+                "nodeid", tunnelInfo.id.ToString()
+            }
+        });
+
+        return jsonNode != null && (int)jsonNode["code"] == 200;
+    }
+
+    public static async Task<string> CreateTunnelAsync
+    (
+        string nodename,
+        string porttypename,
+        string localipdata,
+        int localportdata,
+        int remoteportdata
+    )
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+        var result = new char[8];
+        for (var i = 0; i < 8; i++)
+            result[i] = chars[random.Next(chars.Length)];
+        var tunnelName = new string(result);
+
+        var jsonNode = await PostJsonAsync("https://cf-v2.uapis.cn/tunnel_create",
+            JsonSerializer.Serialize(new
+            {
+                token = Usertoken,
+                tunnelname = tunnelName,
+                node = nodename,
+                porttype = porttypename,
+                localip = localipdata,
+                localport = localportdata,
+                remoteport = remoteportdata,
+                encryption = false,
+                compression = false,
+                extraparams = ""
+            }));
+
+        return (string)jsonNode?["msg"];
+    }
+
+    public static async Task<string> CreateTunnelAsync
+    (
+        string nodename,
+        string porttypename,
+        string localipdata,
+        int localportdata,
+        string banddomaindata
+    )
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+        var result = new char[8];
+        for (var i = 0; i < 8; i++)
+            result[i] = chars[random.Next(chars.Length)];
+        var tunnelName = new string(result);
+
+        var jsonNode = await PostJsonAsync("https://cf-v2.uapis.cn/create_tunnel",
+            JsonSerializer.Serialize(new
+            {
+                token = Usertoken,
+                tunnelname = tunnelName,
+                node = nodename,
+                porttype = porttypename,
+                localip = localipdata,
+                localport = localportdata,
+                banddomain = banddomaindata,
+                encryption = false,
+                compression = false,
+                extraparams = ""
+            }));
+
+        return (string)jsonNode?["msg"];
+    }
+
+    public static async Task StartTunnelAsync
+    (
         string tunnelName,
         Action onStartTrue = null,
         Action onStartFalse = null,
@@ -23,19 +179,19 @@ public abstract class Tunnel
         Action onFrpcNotExists = null,
         Action onTunnelRunning = null)
     {
-        if (!Paths.IsFrpcExists)
+        if (!IsFrpcExists)
         {
             onFrpcNotExists?.Invoke();
             return;
         }
 
-        if (await IsTunnelRunning(tunnelName))
+        if (await IsTunnelRunningAsync(tunnelName))
         {
             onTunnelRunning?.Invoke();
             return;
         }
 
-        var iniData = await API.Tunnel.GetTunnelIniData(tunnelName);
+        var iniData = await GetIniStringAsync(tunnelName);
         if (iniData == null)
         {
             onIniUnKnown?.Invoke();
@@ -43,18 +199,18 @@ public abstract class Tunnel
         }
 
         var inifilePath = Path.GetTempFileName();
-        var logfilePath = Path.Combine(Paths.DataPath, $"{tunnelName}.log");
+        var logfilePath = Path.Combine(DataPath, $"{tunnelName}.log");
 
         File.WriteAllText(inifilePath, iniData);
         File.WriteAllText(logfilePath, string.Empty);
-        Paths.WritingLog($"Starting tunnel: {tunnelName}");
+        WritingLog($"Starting tunnel: {tunnelName}");
 
         var frpProcess = new Process
         {
             StartInfo =
             {
                 FileName = "cmd.exe",
-                Arguments = $"/c {Paths.FrpcPath} -c {inifilePath}",
+                Arguments = $"/c {FrpcPath} -c {inifilePath}",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true,
@@ -66,7 +222,7 @@ public abstract class Tunnel
         {
             if (string.IsNullOrWhiteSpace(args.Data)) return;
 
-            var logLine = args.Data.Replace(User.Usertoken, "{Usertoken}")
+            var logLine = args.Data.Replace(Usertoken, "{Usertoken}")
                 .Replace(inifilePath, "{IniFile}");
             const string pattern = @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[A-Z]\] \[[^\]]+\] ?";
             logLine = Replace(logLine, pattern, "");
@@ -96,13 +252,14 @@ public abstract class Tunnel
         frpProcess.BeginOutputReadLine();
     }
 
-    public static async Task
-        StopTunnel(
-            string tunnelName,
-            Action onStopTrue = null,
-            Action onStopFalse = null)
+    public static async Task StopTunnelAsync
+    (
+        string tunnelName,
+        Action onStopTrue = null,
+        Action onStopFalse = null
+    )
     {
-        if (!await IsTunnelRunning(tunnelName))
+        if (!await IsTunnelRunningAsync(tunnelName))
         {
             onStopFalse?.Invoke();
             return;
@@ -139,7 +296,7 @@ public abstract class Tunnel
         });
     }
 
-    public static async Task<Dictionary<string, bool>> IsTunnelRunning(List<API.Tunnel.TunnelInfo> tunnelsData)
+    public static async Task<Dictionary<string, bool>> IsTunnelRunningAsync(List<TunnelInfoClass> tunnelsData)
     {
         List<string> tunnelNames = [];
         tunnelNames.AddRange(tunnelsData.Select(tunnel => tunnel.name));
@@ -185,7 +342,7 @@ public abstract class Tunnel
         return tunnelStatus;
     }
 
-    public static async Task<bool> IsTunnelRunning(string tunnelName)
+    private static async Task<bool> IsTunnelRunningAsync(string tunnelName)
     {
         return await Task.Run(() =>
         {

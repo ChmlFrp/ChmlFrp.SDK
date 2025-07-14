@@ -157,3 +157,5 @@ foreach (var node in nodes) {
     Console.WriteLine(node.name);
 }
 ```
+
+> 注：以上示例代码不适用于1.3.0版本。
