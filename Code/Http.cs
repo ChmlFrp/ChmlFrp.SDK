@@ -1,5 +1,4 @@
 ﻿using System.Net.Http;
-using System.Text;
 
 namespace CSDK;
 
@@ -35,25 +34,6 @@ public abstract class Http
             using var response =
                 await Client.GetAsync(
                     $"{url}?{string.Join("&", parameters.Select(pair => $"{pair.Key}={pair.Value}"))}");
-            response.EnsureSuccessStatusCode();
-            return JsonNode.Parse(await response.Content.ReadAsStringAsync());
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    public static async Task<JsonNode> PostJsonAsync
-    (
-        string url,
-        string jsonContent
-    )
-    {
-        try
-        {
-            using var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-            using var response = await Client.PostAsync(url, content);
             response.EnsureSuccessStatusCode();
             return JsonNode.Parse(await response.Content.ReadAsStringAsync());
         }

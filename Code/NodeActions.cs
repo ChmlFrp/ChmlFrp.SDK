@@ -2,7 +2,7 @@
 
 public abstract class NodeActions
 {
-    public static async Task<List<NodeDataClass>> GetNodesData()
+    public static async Task<List<NodeDataClass>> GetNodesDataListAsync()
     {
         var jObject = await GetJsonAsync("https://cf-v2.uapis.cn/node");
 
@@ -11,7 +11,7 @@ public abstract class NodeActions
             select JsonSerializer.Deserialize<NodeDataClass>(variable!.ToJsonString())!).ToList();
     }
 
-    public static async Task<NodeInfoClass> GetNodeInfo
+    public static async Task<NodeInfoClass> GetNodeInfoAsync
     (
         string nodeName
     )

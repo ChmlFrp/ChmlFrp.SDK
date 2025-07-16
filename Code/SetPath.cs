@@ -17,7 +17,10 @@ public abstract class SetPath
     public static readonly string FrpcPath = Path.Combine(DataPath, "frpc.exe");
     public static bool IsFrpcExists => File.Exists(FrpcPath);
 
-    public static void Init(string logName)
+    public static void Init
+    (
+        string logName
+    )
     {
         LogFilePath = Path.Combine(DataPath, $"Debug-{logName}.logs");
         Directory.CreateDirectory(DataPath);
@@ -41,7 +44,10 @@ public abstract class SetPath
         }
     }
 
-    public static void WritingLog(string logEntry)
+    public static void WritingLog
+    (
+        string logEntry
+    )
     {
         if (string.IsNullOrWhiteSpace(LogFilePath)) return;
         logEntry = $"[{DateTime.Now}] {logEntry}";

@@ -23,13 +23,13 @@ public abstract class UserActions
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             throw new ArgumentException("Username and password cannot be empty.");
 
-        var jsonNode = await GetJsonAsync("https: //cf-v2.uapis.cn/login", new Dictionary<string, string>
+        var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/login", new Dictionary<string, string>
         {
             {
-                "username", $"{username}"
+                "username", username
             },
             {
-                "password", $"{password}"
+                "password", password
             }
         });
 
@@ -64,7 +64,7 @@ public abstract class UserActions
         UserInfo = null;
     }
 
-    public static void RegisterAsync()
+    public static void Register()
     {
         Process.Start(new ProcessStartInfo("https://panel.chmlfrp.cn/sign") { UseShellExecute = true });
     }

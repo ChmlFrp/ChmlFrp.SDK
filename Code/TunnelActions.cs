@@ -104,11 +104,11 @@ public abstract class TunnelActions
 
     public static async Task<string> CreateTunnelAsync
     (
-        string nodename,
-        string porttypename,
-        string localipdata,
-        int localportdata,
-        int remoteportdata
+        string nodeName,
+        string type,
+        string localip,
+        string localport,
+        string remoteport
     )
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -118,56 +118,21 @@ public abstract class TunnelActions
             result[i] = chars[random.Next(chars.Length)];
         var tunnelName = new string(result);
 
-        var jsonNode = await PostJsonAsync("https://cf-v2.uapis.cn/tunnel_create",
-            JsonSerializer.Serialize(new
-            {
-                token = Usertoken,
-                tunnelname = tunnelName,
-                node = nodename,
-                porttype = porttypename,
-                localip = localipdata,
-                localport = localportdata,
-                remoteport = remoteportdata,
-                encryption = false,
-                compression = false,
-                extraparams = ""
-            }));
-
-        return (string)jsonNode?["msg"];
-    }
-
-    public static async Task<string> CreateTunnelAsync
-    (
-        string nodename,
-        string porttypename,
-        string localipdata,
-        int localportdata,
-        string banddomaindata
-    )
-    {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        var random = new Random();
-        var result = new char[8];
-        for (var i = 0; i < 8; i++)
-            result[i] = chars[random.Next(chars.Length)];
-        var tunnelName = new string(result);
-
-        var jsonNode = await PostJsonAsync("https://cf-v2.uapis.cn/create_tunnel",
-            JsonSerializer.Serialize(new
-            {
-                token = Usertoken,
-                tunnelname = tunnelName,
-                node = nodename,
-                porttype = porttypename,
-                localip = localipdata,
-                localport = localportdata,
-                banddomain = banddomaindata,
-                encryption = false,
-                compression = false,
-                extraparams = ""
-            }));
-
-        return (string)jsonNode?["msg"];
+        var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/tunnel.php", new Dictionary<string, string>
+        {
+            { "token", Usertoken },
+            { "userid", Userid },
+            { "name", tunnelName },
+            { "node", nodeName },
+            { "type", type },
+            { "localip", localip },
+            { "nport", localport },
+            { "dorp", remoteport },
+            { "encryption", "false" },
+            { "compression", "false" },
+            { "ap", "" }
+        });
+        return jsonNode["error"]?.ToString();
     }
 
     public static async Task StartTunnelAsync
@@ -296,7 +261,10 @@ public abstract class TunnelActions
         });
     }
 
-    public static async Task<Dictionary<string, bool>> IsTunnelRunningAsync(List<TunnelInfoClass> tunnelsData)
+    public static async Task<Dictionary<string, bool>> IsTunnelRunningAsync
+    (
+        List<TunnelInfoClass> tunnelsData
+    )
     {
         List<string> tunnelNames = [];
         tunnelNames.AddRange(tunnelsData.Select(tunnel => tunnel.name));
@@ -342,7 +310,10 @@ public abstract class TunnelActions
         return tunnelStatus;
     }
 
-    private static async Task<bool> IsTunnelRunningAsync(string tunnelName)
+    private static async Task<bool> IsTunnelRunningAsync
+    (
+        string tunnelName
+    )
     {
         return await Task.Run(() =>
         {
@@ -371,7 +342,10 @@ public abstract class TunnelActions
         });
     }
 
-    private static string GetIniPathFromProcess(Process process)
+    private static string GetIniPathFromProcess
+    (
+        Process process
+    )
     {
         try
         {

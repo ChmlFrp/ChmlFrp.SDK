@@ -66,11 +66,11 @@ public abstract class Classes
         public int traffic { get; set; }
         public int port { get; set; }
         public int adminPort { get; set; }
-        public int memory_total { get; set; }
-        public int storage_total { get; set; }
-        public int storage_used { get; set; }
-        public int total_traffic_in { get; set; }
-        public int total_traffic_out { get; set; }
+        public long memory_total { get; set; }
+        public long storage_total { get; set; }
+        public long storage_used { get; set; }
+        public long total_traffic_in { get; set; }
+        public long total_traffic_out { get; set; }
         public string cpu_info { get; set; }
         public string nodetoken { get; set; }
         public string realIp { get; set; }
