@@ -32,7 +32,7 @@ public abstract class TunnelActions
         return result;
     }
 
-    public static async Task<TunnelInfoClass> GetTunnelAsync
+    private static async Task<TunnelInfoClass> GetTunnelAsync
     (
         string tunnelName
     )

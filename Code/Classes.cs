@@ -1,6 +1,6 @@
 ﻿namespace CSDK;
 
-public abstract class Classes
+public abstract class Classes // 存储了所有的类定义
 {
     public class UserInfoClass
     {
@@ -8,7 +8,7 @@ public abstract class Classes
         public string usergroup { get; set; }
         public string userimg { get; set; }
         public string usertoken { get; set; }
-        public long id { get; set; }
+        public int id { get; set; }
         public string term { get; set; }
         public string qq { get; set; }
         public string email { get; set; }
@@ -18,8 +18,6 @@ public abstract class Classes
         public string realname { get; set; }
         public string regtime { get; set; }
         public int integral { get; set; }
-        public long total_upload { get; set; }
-        public long total_download { get; set; }
     }
 
     public class TunnelInfoClass
@@ -34,8 +32,6 @@ public abstract class Classes
         public string type { get; set; }
         public string localip { get; set; }
         public int nport { get; set; }
-        public int today_traffic_in { get; set; }
-        public int today_traffic_out { get; set; }
         public int cur_conns { get; set; }
     }
 

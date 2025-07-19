@@ -2,7 +2,7 @@
 
 namespace CSDK;
 
-public abstract class Http
+public abstract class HttpActions
 {
     private static readonly HttpClient Client = new();
 
@@ -34,6 +34,7 @@ public abstract class Http
             using var response =
                 await Client.GetAsync(
                     $"{url}?{string.Join("&", parameters.Select(pair => $"{pair.Key}={pair.Value}"))}");
+            // 比较原始的Url处理方式
             response.EnsureSuccessStatusCode();
             return JsonNode.Parse(await response.Content.ReadAsStringAsync());
         }

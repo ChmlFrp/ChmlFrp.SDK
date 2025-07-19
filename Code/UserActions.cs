@@ -23,6 +23,12 @@ public abstract class UserActions
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             throw new ArgumentException("Username and password cannot be empty.");
 
+        if (IsLoggedIn)
+        {
+            await AutoLoginAsync();
+            return "已登录了Bro";
+        }
+
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/login", new Dictionary<string, string>
         {
             {
@@ -66,6 +72,8 @@ public abstract class UserActions
 
     public static void Register()
     {
+        // 仅仅只是打开注册页面
+        // 如果安装WebView2可以在WebView2中打开（自己写）
         Process.Start(new ProcessStartInfo("https://panel.chmlfrp.cn/sign") { UseShellExecute = true });
     }
 }

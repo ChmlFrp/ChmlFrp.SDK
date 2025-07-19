@@ -16,6 +16,8 @@ public abstract class NodeActions
         string nodeName
     )
     {
+        // 这个方法获取的节点信息相比上一个更详细（API就是这样的）
+        // 具体请看 NodeInfoClass 的定义
         var jObject = await GetJsonAsync("https://cf-v2.uapis.cn/nodeinfo", new Dictionary<string, string>
         {
             {
