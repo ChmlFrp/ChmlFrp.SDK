@@ -32,7 +32,7 @@ public abstract class TunnelActions
         return result;
     }
 
-    private static async Task<TunnelInfoClass> GetTunnelAsync
+    public static async Task<TunnelInfoClass> GetTunnelAsync
     (
         string tunnelName
     )
@@ -85,6 +85,7 @@ public abstract class TunnelActions
     {
         var tunnelInfo = await GetTunnelAsync(tunnelName);
         if (tunnelInfo == null) return false;
+        await StopTunnelAsync(tunnelName);
 
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/deletetl.php", new Dictionary<string, string>
         {
@@ -122,6 +123,37 @@ public abstract class TunnelActions
         {
             { "token", Usertoken },
             { "userid", Userid },
+            { "name", tunnelName },
+            { "node", nodeName },
+            { "type", type },
+            { "localip", localip },
+            { "nport", localport },
+            { "dorp", remoteport },
+            { "encryption", "false" },
+            { "compression", "false" },
+            { "ap", "" }
+        });
+        return jsonNode["error"]?.ToString();
+    }
+
+    public static async Task<string> UpdateTunnelAsync
+    (
+        string tunnelName,
+        string nodeName,
+        string type,
+        string localip,
+        string localport,
+        string remoteport
+    )
+    {
+        var tunnelInfo = await GetTunnelAsync(tunnelName);
+        if (tunnelInfo == null) return null;
+        await StopTunnelAsync(tunnelName);
+        var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/cztunnel.php", new Dictionary<string, string>
+        {
+            { "usertoken", Usertoken },
+            { "userid", Userid },
+            { "tunnelid", tunnelInfo.id.ToString() },
             { "name", tunnelName },
             { "node", nodeName },
             { "type", type },
@@ -183,6 +215,7 @@ public abstract class TunnelActions
             }
         };
 
+        var logOpened = false;
         frpProcess.OutputDataReceived += async (_, args) =>
         {
             if (string.IsNullOrWhiteSpace(args.Data)) return;
@@ -200,10 +233,12 @@ public abstract class TunnelActions
                 return;
             }
 
-            if (!args.Data.Contains("[W]") && !args.Data.Contains("[E]")) return;
+            if (logOpened || (!args.Data.Contains("[W]") && !args.Data.Contains("[E]"))) return;
 
+            logOpened = true;
             frpProcess.Kill();
             onStartFalse?.Invoke();
+
             await Task.Delay(1000);
             Process.Start(
                 new ProcessStartInfo
