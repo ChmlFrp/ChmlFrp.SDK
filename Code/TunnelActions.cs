@@ -138,7 +138,7 @@ public abstract class TunnelActions
 
     public static async Task<string> UpdateTunnelAsync
     (
-        string tunnelName,
+        Classes.TunnelInfoClass tunnelInfo,
         string nodeName,
         string type,
         string localip,
@@ -146,15 +146,13 @@ public abstract class TunnelActions
         string remoteport
     )
     {
-        var tunnelInfo = await GetTunnelAsync(tunnelName);
-        if (tunnelInfo == null) return null;
-        await StopTunnelAsync(tunnelName);
+        await StopTunnelAsync(tunnelInfo.name);
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/cztunnel.php", new Dictionary<string, string>
         {
             { "usertoken", Usertoken },
             { "userid", Userid },
             { "tunnelid", tunnelInfo.id.ToString() },
-            { "name", tunnelName },
+            { "name", tunnelInfo.name },
             { "node", nodeName },
             { "type", type },
             { "localip", localip },
