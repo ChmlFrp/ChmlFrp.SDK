@@ -138,7 +138,7 @@ public abstract class TunnelActions
 
     public static async Task<string> UpdateTunnelAsync
     (
-        Classes.TunnelInfoClass tunnelInfo,
+        TunnelInfoClass tunnelInfo,
         string nodeName,
         string type,
         string localip,

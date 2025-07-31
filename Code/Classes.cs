@@ -52,11 +52,10 @@ public abstract class Classes // 存储了所有的类定义
     {
         public string ip { get; set; }
         public string location { get; set; }
-        public string status { get; set; }
         public string type { get; set; }
-        public string version { get; set; }
-        public string uptime { get; set; }
-        public int load { get; set; }
+        public string state { get; set; }
+        public long uptime_seconds { get; set; }
+        public float load15 { get; set; }
         public int users { get; set; }
         public int bandwidth { get; set; }
         public int traffic { get; set; }
@@ -65,8 +64,8 @@ public abstract class Classes // 存储了所有的类定义
         public long memory_total { get; set; }
         public long storage_total { get; set; }
         public long storage_used { get; set; }
-        public long total_traffic_in { get; set; }
-        public long total_traffic_out { get; set; }
+        public float total_traffic_in { get; set; }
+        public float total_traffic_out { get; set; }
         public string cpu_info { get; set; }
         public string nodetoken { get; set; }
         public string realIp { get; set; }
