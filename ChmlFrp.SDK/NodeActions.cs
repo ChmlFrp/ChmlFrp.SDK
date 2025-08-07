@@ -1,4 +1,4 @@
-﻿namespace CSDK;
+﻿namespace ChmlFrp.SDK;
 
 public abstract class NodeActions
 {
@@ -10,7 +10,7 @@ public abstract class NodeActions
         return (from variable in jObject["data"]?.AsArray()!
             select JsonSerializer.Deserialize<NodeDataClass>(variable!.ToJsonString())!).ToList();
     }
-
+    
     public static async Task<NodeInfoClass> GetNodeInfoAsync
     (
         string nodeName

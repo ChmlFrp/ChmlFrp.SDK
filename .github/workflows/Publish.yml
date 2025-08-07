@@ -18,6 +18,12 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
       - run: |
-          dotnet build -c Release
-          dotnet nuget push .\bin\Release\*.nupkg --source "https://nuget.pkg.github.com/ChmlFrp/index.json" --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
-          dotnet nuget push .\bin\Release\*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGETKEY }} --skip-duplicate
+          dotnet build -c Release 
+          dotnet nuget push **\Release\*.nupkg --source "https://nuget.pkg.github.com/ChmlFrp/index.json" --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+          dotnet nuget push **\Release\*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGETKEY }} --skip-duplicate
+      - uses: actions/upload-artifact@main
+        with:
+          name: Release
+          path: |
+            **\bin\**\*.nupkg
+            **\bin

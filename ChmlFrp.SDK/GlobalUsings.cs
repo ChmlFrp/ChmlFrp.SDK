@@ -7,5 +7,5 @@ global using System.Linq;
 global using System.Text.Json;
 global using System.Text.Json.Nodes;
 global using System.Threading.Tasks;
-global using static CSDK.Classes;
-global using static CSDK.HttpActions;
+global using static ChmlFrp.SDK.Classes;
+global using static ChmlFrp.SDK.HttpActions;

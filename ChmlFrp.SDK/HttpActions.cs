@@ -1,6 +1,6 @@
 ﻿using System.Net.Http;
 
-namespace CSDK;
+namespace ChmlFrp.SDK;
 
 public abstract class HttpActions
 {
@@ -42,27 +42,5 @@ public abstract class HttpActions
         {
             return null;
         }
-    }
-
-    public static async Task<bool> GetFileAsync
-    (
-        string url,
-        string path
-    )
-    {
-        try
-        {
-#if NET
-            await File.WriteAllBytesAsync(path, await Client.GetByteArrayAsync(url));
-#else
-            File.WriteAllBytes(path, await Client.GetByteArrayAsync(url));
-#endif
-        }
-        catch
-        {
-            if (File.Exists(path)) File.Delete(path);
-        }
-
-        return File.Exists(path) && new FileInfo(path).Length != 0;
     }
 }

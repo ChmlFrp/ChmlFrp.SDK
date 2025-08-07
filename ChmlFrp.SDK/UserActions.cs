@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Microsoft.Win32;
 
-namespace CSDK;
+namespace ChmlFrp.SDK;
 
 public abstract class UserActions
 {
@@ -24,10 +24,7 @@ public abstract class UserActions
             throw new ArgumentException("Username and password cannot be empty.");
 
         if (IsLoggedIn)
-        {
-            await AutoLoginAsync();
             return "已登录了Bro";
-        }
 
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/login", new Dictionary<string, string>
         {
@@ -46,15 +43,27 @@ public abstract class UserActions
         return (string)jsonNode["msg"];
     }
 
-    public static async Task AutoLoginAsync()
+    public static async Task LoginAsyncFromToken
+    (
+        string userToken = null
+    )
     {
-        var tempToken = (string)Key.GetValue("usertoken");
-        if (string.IsNullOrWhiteSpace(tempToken)) return;
-
+        // 可以使用传入的token登录
+        if (IsLoggedIn) return;
+        if (!string.IsNullOrWhiteSpace(userToken))
+        {
+            Key.SetValue("usertoken", userToken);
+        }
+        else
+        {
+            userToken = (string)Key.GetValue("usertoken");
+            if (string.IsNullOrWhiteSpace(userToken)) return;
+        }
+        
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/userinfo", new Dictionary<string, string>
         {
             {
-                "token", tempToken
+                "token", userToken
             }
         });
 
@@ -63,13 +72,13 @@ public abstract class UserActions
         IsLoggedIn = true;
     }
 
-    public static void LogoutAsync()
+    public static void Logout()
     {
         Key.DeleteValue("usertoken", false);
         IsLoggedIn = false;
         UserInfo = null;
     }
-
+    
     public static void Register()
     {
         // 仅仅只是打开注册页面

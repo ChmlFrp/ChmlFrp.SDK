@@ -1,3 +1,4 @@
 ﻿<Solution>
-    <Project Path="CSDK.csproj"/>
+  <Project Path="ConsoleExample\ConsoleExample.csproj" />
+  <Project Path="CSDK.csproj" />
 </Solution>
