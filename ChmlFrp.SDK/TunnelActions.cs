@@ -10,6 +10,7 @@ namespace ChmlFrp.SDK;
 public abstract class TunnelActions
 {
     # region API Methods
+
     public static async Task<List<TunnelInfoClass>> GetTunnelListAsync()
     {
         if (!IsLoggedIn)
@@ -141,9 +142,11 @@ public abstract class TunnelActions
         if ((string)jsonNode["state"] != "success") return null;
         return (string)jsonNode["data"]!;
     }
-    #endregion 
-    
+
+    #endregion
+
     #region Windows Service Methods
+
     public static void StartTunnel
     (
         TunnelInfoClass tunnelInfo,
@@ -293,5 +296,6 @@ public abstract class TunnelActions
             return null;
         }
     }
+
     #endregion
 }

@@ -47,7 +47,7 @@ public abstract class Classes // 存储了所有的类定义
         public string udp { get; set; }
         public string fangyu { get; set; }
     }
-    
+
     public class NodeInfoClass : NodeDataClass
     {
         public string ip { get; set; }

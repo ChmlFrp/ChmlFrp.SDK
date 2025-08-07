@@ -20,7 +20,7 @@ for (;;)
     ForegroundColor = ConsoleColor.Red;
     WriteLine("You are not logged in.");
     ResetColor();
- 
+
     Write("用户名:");
     var username = ReadLine();
     WriteLine("密码:");
@@ -32,17 +32,13 @@ for (;;)
 
 var tunnelList = await GetTunnelListAsync();
 foreach (var tunnelInfo in tunnelList)
-{
     StartTunnel(tunnelInfo,
         () => WriteLine($"Tunnel {tunnelInfo.name} started successfully!"),
         () => WriteLine($"Tunnel {tunnelInfo.name} failed to start!"),
         () => WriteLine($"Tunnel {tunnelInfo.name} is running!"));
-}
 
 ReadKey();
 
 foreach (var tunnelInfo in tunnelList)
-{
     StopTunnel(tunnelInfo.id,
         () => WriteLine($"Tunnel {tunnelInfo.name} stoped successfully!"));
-}

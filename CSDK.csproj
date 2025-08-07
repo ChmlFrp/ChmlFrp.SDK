@@ -16,15 +16,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Text.Json"  Version="*"/>
+        <PackageReference Include="System.Text.Json" Version="*"/>
         <PackageReference Include="System.Management" Condition="$([MSBuild]::IsOSPlatform('Windows'))" Version="*"/>
-        <PackageReference Include="Microsoft.Win32.Registry" Condition="$([MSBuild]::IsOSPlatform('Windows'))"  Version="*"/>
+        <PackageReference Include="Microsoft.Win32.Registry" Condition="$([MSBuild]::IsOSPlatform('Windows'))" Version="*"/>
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="ConsoleExample\**" />
-        <Compile Remove="ConsoleExample\**" />
-        <EmbeddedResource Remove="ConsoleExample\**" />
+        <None Remove="ConsoleExample\**"/>
+        <Compile Remove="ConsoleExample\**"/>
+        <EmbeddedResource Remove="ConsoleExample\**"/>
         <None Include="README.md" Pack="true" PackagePath="\"/>
         <None Include="LICENSE.md" Pack="true" PackagePath="\"/>
     </ItemGroup>

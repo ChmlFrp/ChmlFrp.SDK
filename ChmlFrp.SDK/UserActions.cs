@@ -59,7 +59,7 @@ public abstract class UserActions
             userToken = (string)Key.GetValue("usertoken");
             if (string.IsNullOrWhiteSpace(userToken)) return;
         }
-        
+
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/userinfo", new Dictionary<string, string>
         {
             {
@@ -78,7 +78,7 @@ public abstract class UserActions
         IsLoggedIn = false;
         UserInfo = null;
     }
-    
+
     public static void Register()
     {
         // 仅仅只是打开注册页面

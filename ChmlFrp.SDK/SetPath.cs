@@ -2,11 +2,6 @@
 
 public abstract class SetPath
 {
-    protected SetPath()
-    {
-        Directory.CreateDirectory(DataPath);
-    }
-    
     // 目录在 AppData\Roaming\ChmlFrp 下
     public static readonly string DataPath =
         Path.Combine(Environment.GetFolderPath(
@@ -14,6 +9,11 @@ public abstract class SetPath
             "ChmlFrp");
 
     public static string LogFilePath;
+
+    protected SetPath()
+    {
+        Directory.CreateDirectory(DataPath);
+    }
 
     public static void Init
     (
