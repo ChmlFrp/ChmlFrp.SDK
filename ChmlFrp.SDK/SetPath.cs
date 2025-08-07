@@ -10,16 +10,12 @@ public abstract class SetPath
 
     public static string LogFilePath;
 
-    protected SetPath()
-    {
-        Directory.CreateDirectory(DataPath);
-    }
-
     public static void Init
     (
         string logName
     )
     {
+        Directory.CreateDirectory(DataPath);
         LogFilePath = Path.Combine(DataPath, $"Debug-{logName}.logs");
         File.WriteAllText(LogFilePath, string.Empty);
         WritingLog("ChmlFrp SDK initialized.");
