@@ -32,7 +32,7 @@ for (;;)
 
 var tunnelList = await GetTunnelListAsync();
 foreach (var tunnelInfo in tunnelList)
-    StartTunnel(tunnelInfo,
+    StartTunnel(tunnelInfo.id,
         () => WriteLine($"Tunnel {tunnelInfo.name} started successfully!"),
         () => WriteLine($"Tunnel {tunnelInfo.name} failed to start!"),
         () => WriteLine($"Tunnel {tunnelInfo.name} is running!"));

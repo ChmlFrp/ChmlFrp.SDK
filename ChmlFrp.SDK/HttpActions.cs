@@ -4,7 +4,10 @@ namespace ChmlFrp.SDK;
 
 public abstract class HttpActions
 {
-    private static readonly HttpClient Client = new();
+    private static readonly HttpClient Client = new()
+    {
+        Timeout = TimeSpan.FromSeconds(3)
+    };
 
     public static async Task<JsonNode> GetJsonAsync
     (
@@ -31,10 +34,8 @@ public abstract class HttpActions
     {
         try
         {
-            using var response =
-                await Client.GetAsync(
-                    $"{url}?{string.Join("&", parameters.Select(pair => $"{pair.Key}={pair.Value}"))}");
-            // 比较原始的Url处理方式
+            var queryString = await new FormUrlEncodedContent(parameters).ReadAsStringAsync();
+            using var response = await Client.GetAsync($"{url}?{queryString}");
             response.EnsureSuccessStatusCode();
             return JsonNode.Parse(await response.Content.ReadAsStringAsync());
         }

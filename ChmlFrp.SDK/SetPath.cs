@@ -29,6 +29,7 @@ public abstract class SetPath
         if (string.IsNullOrWhiteSpace(LogFilePath)) return;
         logEntry = $"[{DateTime.Now}] {logEntry}";
         Console.WriteLine(logEntry);
+        
         File.AppendAllText(LogFilePath, logEntry + Environment.NewLine);
     }
 }

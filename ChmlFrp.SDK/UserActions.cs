@@ -11,8 +11,8 @@ public abstract class UserActions
         Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
 
     public static UserInfoClass UserInfo;
-    public static string Userid => UserInfo.id.ToString();
-    public static string Usertoken => UserInfo.usertoken;
+    public static string userid => UserInfo.id.ToString();
+    public static string usertoken => UserInfo.usertoken;
 
     public static async Task<string> LoginAsync
     (
@@ -24,7 +24,7 @@ public abstract class UserActions
             throw new ArgumentException("Username and password cannot be empty.");
 
         if (IsLoggedIn)
-            return "已登录了Bro";
+            throw new ArgumentException("Already Logged in.");
 
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/login", new Dictionary<string, string>
         {
@@ -38,7 +38,7 @@ public abstract class UserActions
 
         if (jsonNode == null || (string)jsonNode["state"] != "success") return (string)jsonNode?["msg"];
         UserInfo = JsonSerializer.Deserialize<UserInfoClass>(jsonNode["data"]!.ToJsonString());
-        Key.SetValue("usertoken", Usertoken);
+        Key.SetValue("usertoken", usertoken);
         IsLoggedIn = true;
         return (string)jsonNode["msg"];
     }
@@ -49,7 +49,8 @@ public abstract class UserActions
     )
     {
         // 可以使用传入的token登录
-        if (IsLoggedIn) return;
+        if (IsLoggedIn)
+            throw new ArgumentException("Logged in already.");
         if (!string.IsNullOrWhiteSpace(userToken))
         {
             Key.SetValue("usertoken", userToken);

@@ -18,9 +18,7 @@ public abstract class TunnelActions
 
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/tunnel", new Dictionary<string, string>
         {
-            {
-                "token", Usertoken
-            }
+            { "token", usertoken }
         });
 
         if (jsonNode == null || (string)jsonNode["state"] != "success") return [];
@@ -41,15 +39,9 @@ public abstract class TunnelActions
         StopTunnel(tunnelId);
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/deletetl.php", new Dictionary<string, string>
         {
-            {
-                "token", Usertoken
-            },
-            {
-                "userid", Userid
-            },
-            {
-                "nodeid", tunnelId.ToString()
-            }
+            { "token", usertoken },
+            { "userid", userid },
+            { "nodeid", tunnelId.ToString() }
         });
 
         return jsonNode != null && (int)jsonNode["code"] == 200;
@@ -74,8 +66,8 @@ public abstract class TunnelActions
 
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/tunnel.php", new Dictionary<string, string>
         {
-            { "token", Usertoken },
-            { "userid", Userid },
+            { "token", usertoken },
+            { "userid", userid },
             { "name", tunnelName },
             { "node", nodeName },
             { "type", type },
@@ -87,6 +79,7 @@ public abstract class TunnelActions
             { "ap", "" }
         });
         return jsonNode["error"]?.ToString();
+        // 可以Contains("成功");来判断。
     }
 
     public static async Task<string> UpdateTunnelAsync
@@ -99,13 +92,11 @@ public abstract class TunnelActions
         string remotePort
     )
     {
-#if WINDOWS
         StopTunnel(tunnelInfo.id);
-#endif
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/cztunnel.php", new Dictionary<string, string>
         {
-            { "usertoken", Usertoken },
-            { "userid", Userid },
+            { "usertoken", usertoken },
+            { "userid", userid },
             { "tunnelid", tunnelInfo.id.ToString() },
             { "name", tunnelInfo.name },
             { "node", nodeName },
@@ -118,29 +109,7 @@ public abstract class TunnelActions
             { "ap", "" }
         });
         return jsonNode["error"]?.ToString();
-    }
-
-    [Obsolete("该方法已被弃用，StartTunnel已不在使用。")]
-    public static async Task<string> GetIniStringAsync
-    (
-        TunnelInfoClass tunnelInfo
-    )
-    {
-        var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/tunnel_config", new Dictionary<string, string>
-        {
-            {
-                "token", $"{Usertoken}"
-            },
-            {
-                "node", $"{tunnelInfo.node}"
-            },
-            {
-                "tunnel_names", tunnelInfo.name
-            }
-        });
-
-        if ((string)jsonNode["state"] != "success") return null;
-        return (string)jsonNode["data"]!;
+        // 可以Contains("成功");来判断。
     }
 
     #endregion
@@ -149,13 +118,13 @@ public abstract class TunnelActions
 
     public static void StartTunnel
     (
-        TunnelInfoClass tunnelInfo,
+        int tunnelId,
         Action onStartTrue = null,
         Action onStartFalse = null,
         Action onTunnelRunning = null
     )
     {
-        if (IsTunnelRunning(tunnelInfo.id))
+        if (IsTunnelRunning(tunnelId))
         {
             onTunnelRunning?.Invoke();
             return;
@@ -166,47 +135,45 @@ public abstract class TunnelActions
             StartInfo =
             {
                 FileName = "cmd.exe",
-                Arguments = $"/c cd {AppDomain.CurrentDomain.BaseDirectory} & frpc -u {Usertoken} -p {tunnelInfo.id}",
+                Arguments = $"/c cd {AppDomain.CurrentDomain.BaseDirectory} & frpc -u {usertoken} -p {tunnelId}",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true,
                 StandardOutputEncoding = Encoding.UTF8
             }
         };
-
-        var logOpened = false;
-        var logfilePath = Path.Combine(DataPath, $"{tunnelInfo.name}({tunnelInfo.type.ToUpper()}).log");
+        
+        var logOpened = true;
+        var logfilePath = Path.Combine(DataPath, $"{tunnelId}.log");
         File.WriteAllText(logfilePath, string.Empty);
         frpProcess.OutputDataReceived += async (_, args) =>
         {
-            if (string.IsNullOrWhiteSpace(args.Data)) return;
-            File.AppendAllText(logfilePath, args.Data.Replace(Usertoken, "{Usertoken}") + Environment.NewLine);
+            var line = args.Data;
+            if (string.IsNullOrWhiteSpace(line)) return;
+            File.AppendAllText(logfilePath, line.Replace(usertoken, "{UserToken}") + Environment.NewLine);
 
-            if (args.Data.Contains("启动配置文件"))
+            if (line.Contains("启动配置文件"))
             {
                 File.Delete(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frpc.ini"));
-                return;
             }
-
-            if (args.Data.Contains("启动成功"))
+            else if (line.Contains("启动成功"))
             {
                 onStartTrue?.Invoke();
-                return;
             }
+            else if (logOpened && !line.Contains("[I]"))
+            {
+                logOpened = false;
+                StopTunnel(tunnelId);
+                onStartFalse?.Invoke();
 
-            if (logOpened || (!args.Data.Contains("[W]") && !args.Data.Contains("[E]"))) return;
-
-            logOpened = true;
-            StopTunnel(tunnelInfo.id);
-            onStartFalse?.Invoke();
-
-            await Task.Delay(1000);
-            Process.Start(
-                new ProcessStartInfo
-                {
-                    FileName = logfilePath,
-                    UseShellExecute = true
-                });
+                await Task.Delay(1000);
+                Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = logfilePath,
+                        UseShellExecute = true
+                    });
+            }
         };
 
         frpProcess.Start();
@@ -229,19 +196,19 @@ public abstract class TunnelActions
 
         foreach (var process in processes)
         {
-            if (GetIdFromProcess(process) != tunnelId.ToString()) continue;
+            if (GetIdFromProcess(process.Id) != tunnelId) continue;
             process.Kill();
         }
 
         onStopTrue?.Invoke();
     }
 
-    public static Dictionary<string, bool> IsTunnelRunning
+    public static Dictionary<int, bool> IsTunnelRunning
     (
         List<TunnelInfoClass> tunnelsData
     )
     {
-        var tunnelStatus = new Dictionary<string, bool>(tunnelsData.Count);
+        var tunnelStatus = new Dictionary<int, bool>(tunnelsData.Count);
         if (tunnelsData.Count == 0)
             return null;
 
@@ -249,17 +216,12 @@ public abstract class TunnelActions
         if (processes.Length == 0)
         {
             foreach (var tunnel in tunnelsData)
-                tunnelStatus[tunnel.id.ToString()] = false;
+                tunnelStatus[tunnel.id] = false;
             return tunnelStatus;
         }
 
-        var runningTunnelIds = new HashSet<string>(
-            processes.Select(GetIdFromProcess)
-                .Where(id => id != null)
-        );
-
-        foreach (var tunnel in tunnelsData)
-            tunnelStatus[tunnel.id.ToString()] = runningTunnelIds.Contains(tunnel.id.ToString());
+        foreach (var tunnelData in tunnelsData)
+              tunnelStatus[tunnelData.id] = IsTunnelRunning(tunnelData.id,processes);
 
         return tunnelStatus;
     }
@@ -271,30 +233,19 @@ public abstract class TunnelActions
     )
     {
         processes ??= Process.GetProcessesByName("frpc");
-        return processes.Length != 0 && processes.Any(process => tunnelId.ToString() == GetIdFromProcess(process));
+        return processes.Length != 0 && processes.Select(process => GetIdFromProcess(process.Id)).Where(id => id != 0).Any(id => tunnelId == id);
     }
 
     private static readonly Regex CommandLineRegex = new(@"-p\s+([^\s]+)", RegexOptions.Compiled);
 
-    private static string GetIdFromProcess(Process process)
+    private static int GetIdFromProcess(int processid)
     {
-        try
-        {
-            using var searcher = new ManagementObjectSearcher(
-                $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}");
-
-            using var collection = searcher.Get();
-            var commandLine = collection
-                .Cast<ManagementObject>()
-                .Select(obj => obj["CommandLine"]?.ToString())
-                .FirstOrDefault();
-
-            return string.IsNullOrWhiteSpace(commandLine) ? null : CommandLineRegex.Match(commandLine).Groups[1].Value;
-        }
-        catch
-        {
-            return null;
-        }
+        using var searcher = new ManagementObjectSearcher(
+            $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {processid}");
+        var commandLine = searcher.Get()
+            .OfType<ManagementObject>()
+            .FirstOrDefault()?["CommandLine"]?.ToString();
+        return int.TryParse(CommandLineRegex.Match(commandLine!).Groups[1].Value,out var id) ? id : 0;
     }
 
     #endregion

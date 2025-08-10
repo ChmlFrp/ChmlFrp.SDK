@@ -21,7 +21,7 @@ public abstract class NodeActions
         var jObject = await GetJsonAsync("https://cf-v2.uapis.cn/nodeinfo", new Dictionary<string, string>
         {
             {
-                "token", UserActions.Usertoken
+                "token", UserActions.usertoken
             },
             {
                 "node", nodeName
