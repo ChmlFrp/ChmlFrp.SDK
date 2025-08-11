@@ -36,7 +36,7 @@ public abstract class TunnelActions
         int tunnelId
     )
     {
-        StopTunnel(tunnelId);
+        await StopTunnelAsync(tunnelId);
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/deletetl.php", new Dictionary<string, string>
         {
             { "token", usertoken },
@@ -92,7 +92,7 @@ public abstract class TunnelActions
         string remotePort
     )
     {
-        StopTunnel(tunnelInfo.id);
+        await StopTunnelAsync(tunnelInfo.id);
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/cztunnel.php", new Dictionary<string, string>
         {
             { "usertoken", usertoken },
@@ -116,7 +116,7 @@ public abstract class TunnelActions
 
     #region Windows Service Methods
 
-    public static void StartTunnel
+    public static async Task StartTunnelAsync
     (
         int tunnelId,
         Action onStartTrue = null,
@@ -124,7 +124,7 @@ public abstract class TunnelActions
         Action onTunnelRunning = null
     )
     {
-        if (IsTunnelRunning(tunnelId))
+        if (await IsTunnelRunningAsync(tunnelId))
         {
             onTunnelRunning?.Invoke();
             return;
@@ -163,7 +163,7 @@ public abstract class TunnelActions
             else if (logOpened && !line.Contains("[I]"))
             {
                 logOpened = false;
-                StopTunnel(tunnelId);
+                await StopTunnelAsync(tunnelId);
                 onStartFalse?.Invoke();
 
                 await Task.Delay(1000);
@@ -180,7 +180,7 @@ public abstract class TunnelActions
         frpProcess.BeginOutputReadLine();
     }
 
-    public static void StopTunnel
+    public static async Task StopTunnelAsync
     (
         int tunnelId,
         Action onStopTrue = null,
@@ -188,7 +188,7 @@ public abstract class TunnelActions
     )
     {
         var processes = Process.GetProcessesByName("frpc");
-        if (processes.Length == 0 || !IsTunnelRunning(tunnelId, processes))
+        if (processes.Length == 0 || !await IsTunnelRunningAsync(tunnelId, processes))
         {
             onStopFalse?.Invoke();
             return;
@@ -203,37 +203,46 @@ public abstract class TunnelActions
         onStopTrue?.Invoke();
     }
 
-    public static Dictionary<int, bool> IsTunnelRunning
+    public static async Task<Dictionary<int, bool>> IsTunnelRunningAsync
     (
         List<TunnelInfoClass> tunnelsData
     )
     {
-        var tunnelStatus = new Dictionary<int, bool>(tunnelsData.Count);
-        if (tunnelsData.Count == 0)
+        if (tunnelsData == null || tunnelsData.Count == 0)
             return null;
 
         var processes = Process.GetProcessesByName("frpc");
-        if (processes.Length == 0)
+        var noProcesses = processes.Length == 0;
+
+
+        var tasks = tunnelsData.Select(async tunnel => 
         {
-            foreach (var tunnel in tunnelsData)
-                tunnelStatus[tunnel.id] = false;
-            return tunnelStatus;
-        }
+            var isRunning = !noProcesses && await IsTunnelRunningAsync(tunnel.id, processes);
+            return (tunnel.id, isRunning);
+        });
 
-        foreach (var tunnelData in tunnelsData)
-              tunnelStatus[tunnelData.id] = IsTunnelRunning(tunnelData.id,processes);
-
-        return tunnelStatus;
+        var results = await Task.WhenAll(tasks);
+        return results.ToDictionary(x => x.id, x => x.isRunning);
     }
 
-    private static bool IsTunnelRunning
+    private static async Task<bool> IsTunnelRunningAsync
     (
         int tunnelId,
         Process[] processes = null
     )
     {
         processes ??= Process.GetProcessesByName("frpc");
-        return processes.Length != 0 && processes.Select(process => GetIdFromProcess(process.Id)).Where(id => id != 0).Any(id => tunnelId == id);
+        if (processes.Length == 0)
+            return false;
+        
+        var tasks = processes.Select(async process =>
+        {
+            var processTunnelId = await Task.Run(() => GetIdFromProcess(process.Id));
+            return processTunnelId != 0 && processTunnelId == tunnelId;
+        });
+
+        var results = await Task.WhenAll(tasks);
+        return results.Any(x => x);
     }
 
     private static readonly Regex CommandLineRegex = new(@"-p\s+([^\s]+)", RegexOptions.Compiled);
