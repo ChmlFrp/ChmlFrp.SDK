@@ -49,8 +49,6 @@ public abstract class UserActions
     )
     {
         // 可以使用传入的token登录
-        if (IsLoggedIn)
-            throw new ArgumentException("Logged in already.");
         if (!string.IsNullOrWhiteSpace(userToken))
         {
             Key.SetValue("usertoken", userToken);

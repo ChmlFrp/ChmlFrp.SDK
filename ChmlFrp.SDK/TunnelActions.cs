@@ -36,7 +36,7 @@ public abstract class TunnelActions
         int tunnelId
     )
     {
-        await StopTunnelAsync(tunnelId);
+        StopTunnelFromId(tunnelId);
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/deletetl.php", new Dictionary<string, string>
         {
             { "token", usertoken },
@@ -92,7 +92,7 @@ public abstract class TunnelActions
         string remotePort
     )
     {
-        await StopTunnelAsync(tunnelInfo.id);
+        StopTunnelFromId(tunnelInfo.id);
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/cztunnel.php", new Dictionary<string, string>
         {
             { "usertoken", usertoken },
@@ -116,7 +116,7 @@ public abstract class TunnelActions
 
     #region Windows Service Methods
 
-    public static async Task StartTunnelAsync
+    public static async void StartTunnelFromId
     (
         int tunnelId,
         Action onStartTrue = null,
@@ -163,7 +163,7 @@ public abstract class TunnelActions
             else if (logOpened && !line.Contains("[I]"))
             {
                 logOpened = false;
-                await StopTunnelAsync(tunnelId);
+                StopTunnelFromId(tunnelId);
                 onStartFalse?.Invoke();
 
                 await Task.Delay(1000);
@@ -180,7 +180,7 @@ public abstract class TunnelActions
         frpProcess.BeginOutputReadLine();
     }
 
-    public static async Task StopTunnelAsync
+    public static async void StopTunnelFromId
     (
         int tunnelId,
         Action onStopTrue = null,
@@ -208,19 +208,18 @@ public abstract class TunnelActions
         List<TunnelInfoClass> tunnelsData
     )
     {
-        if (tunnelsData == null || tunnelsData.Count == 0)
+        if (tunnelsData.Count == 0)
             return null;
 
         var processes = Process.GetProcessesByName("frpc");
         var noProcesses = processes.Length == 0;
-
-
+        
         var tasks = tunnelsData.Select(async tunnel => 
         {
             var isRunning = !noProcesses && await IsTunnelRunningAsync(tunnel.id, processes);
             return (tunnel.id, isRunning);
         });
-
+        
         var results = await Task.WhenAll(tasks);
         return results.ToDictionary(x => x.id, x => x.isRunning);
     }
@@ -245,16 +244,20 @@ public abstract class TunnelActions
         return results.Any(x => x);
     }
 
-    private static readonly Regex CommandLineRegex = new(@"-p\s+([^\s]+)", RegexOptions.Compiled);
+    private static readonly Regex CommandLineRegex = new(@"-p\s+(\d+)",RegexOptions.Compiled);
 
-    private static int GetIdFromProcess(int processid)
+    private static int GetIdFromProcess
+    (
+        int processid
+    )
     {
         using var searcher = new ManagementObjectSearcher(
             $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {processid}");
-        var commandLine = searcher.Get()
-            .OfType<ManagementObject>()
-            .FirstOrDefault()?["CommandLine"]?.ToString();
-        return int.TryParse(CommandLineRegex.Match(commandLine!).Groups[1].Value,out var id) ? id : 0;
+        var match = CommandLineRegex.Match(
+            searcher.Get()
+                .OfType<ManagementObject>()
+                .FirstOrDefault()?["CommandLine"]?.ToString() ?? string.Empty);
+        return match.Success ? int.Parse(match.Groups[1].Value) : 0;
     }
 
     #endregion
