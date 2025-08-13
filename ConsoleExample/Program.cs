@@ -33,12 +33,21 @@ for (;;)
 var tunnelList = await GetTunnelListAsync();
 foreach (var tunnelInfo in tunnelList)
     StartTunnelFromId(tunnelInfo.id,
-        () => WriteLine($"Tunnel {tunnelInfo.name} started successfully!"),
-        () => WriteLine($"Tunnel {tunnelInfo.name} failed to start!"),
-        () => WriteLine($"Tunnel {tunnelInfo.name} is running!"));
+        () => WriteLine($"Tunnel {tunnelInfo.name} is running!"),
+        isStart =>
+            WriteLine(isStart
+                ? $"Tunnel {tunnelInfo.name} started successfully!"
+                : $"Tunnel {tunnelInfo.name} failed to start!")
+    );
 
 ReadKey();
 
 foreach (var tunnelInfo in tunnelList)
     StopTunnelFromId(tunnelInfo.id,
-        () => WriteLine($"Tunnel {tunnelInfo.name} stoped successfully!"));
+        isStop =>
+        {
+            if (isStop)
+                WriteLine($"Tunnel {tunnelInfo.name} stoped successfully!");
+        });
+        
+ReadKey();
