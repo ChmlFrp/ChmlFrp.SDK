@@ -18,7 +18,7 @@ public abstract class TunnelActions
 
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/tunnel", new Dictionary<string, string>
         {
-            { "token", usertoken }
+            { "token", UserToken }
         });
 
         if (jsonNode == null || (string)jsonNode["state"] != "success") return [];
@@ -39,8 +39,8 @@ public abstract class TunnelActions
         StopTunnelFromId(tunnelId);
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/deletetl.php", new Dictionary<string, string>
         {
-            { "token", usertoken },
-            { "userid", userid },
+            { "token", UserToken },
+            { "userid", Userid },
             { "nodeid", tunnelId.ToString() }
         });
 
@@ -66,8 +66,8 @@ public abstract class TunnelActions
 
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/tunnel.php", new Dictionary<string, string>
         {
-            { "token", usertoken },
-            { "userid", userid },
+            { "token", UserToken },
+            { "userid", Userid },
             { "name", tunnelName },
             { "node", nodeName },
             { "type", type },
@@ -95,8 +95,8 @@ public abstract class TunnelActions
         StopTunnelFromId(tunnelInfo.id);
         var jsonNode = await GetJsonAsync("https://cf-v1.uapis.cn/api/cztunnel.php", new Dictionary<string, string>
         {
-            { "usertoken", usertoken },
-            { "userid", userid },
+            { "usertoken", UserToken },
+            { "userid", Userid },
             { "tunnelid", tunnelInfo.id.ToString() },
             { "name", tunnelInfo.name },
             { "node", nodeName },
@@ -116,7 +116,10 @@ public abstract class TunnelActions
 
     #region Windows Service Methods
 
-    public static async void StartTunnelFromId
+    #region Old Action
+
+    [Obsolete("此方法已废弃，请使用StartTunnelFromId代替")]
+    public static void StartTunnel
     (
         int tunnelId,
         Action onStartTrue = null,
@@ -124,9 +127,53 @@ public abstract class TunnelActions
         Action onTunnelRunning = null
     )
     {
+        StartTunnelFromId
+        (
+            tunnelId,
+            () => { onTunnelRunning?.Invoke(); },
+            isStart =>
+            {
+                if (isStart)
+                    onStartTrue?.Invoke();
+                else
+                    onStartFalse?.Invoke();
+            }
+        );
+    }
+
+    [Obsolete("此方法已废弃，请使用StopTunnelFromId代替")]
+    public static void StopTunnel
+    (
+        int tunnelId,
+        Action onStopTrue = null,
+        Action onStopFalse = null
+    )
+    {
+        StopTunnelFromId
+        (
+            tunnelId,
+            isStop =>
+            {
+                if (isStop)
+                    onStopTrue?.Invoke();
+                else
+                    onStopFalse?.Invoke();
+            }
+        );
+    }
+
+    #endregion
+
+    public static async void StartTunnelFromId
+    (
+        int tunnelId,
+        Action alreadyRunning = null,
+        Action<bool> onStart = null
+    )
+    {
         if (await IsTunnelRunningAsync(tunnelId))
         {
-            onTunnelRunning?.Invoke();
+            alreadyRunning?.Invoke();
             return;
         }
 
@@ -135,42 +182,39 @@ public abstract class TunnelActions
             StartInfo =
             {
                 FileName = "cmd.exe",
-                Arguments = $"/c cd {AppDomain.CurrentDomain.BaseDirectory} & frpc -u {usertoken} -p {tunnelId}",
+                Arguments = $"/c cd {AppDomain.CurrentDomain.BaseDirectory} & frpc -u {UserToken} -p {tunnelId}",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true,
                 StandardOutputEncoding = Encoding.UTF8
             }
         };
-        
+
         var logOpened = true;
-        var logfilePath = Path.Combine(DataPath, $"{tunnelId}.log");
-        File.WriteAllText(logfilePath, string.Empty);
+        var logFilePath = Path.Combine(DataPath, $"{tunnelId}.log");
+        File.WriteAllText(logFilePath, string.Empty);
+
         frpProcess.OutputDataReceived += async (_, args) =>
         {
             var line = args.Data;
             if (string.IsNullOrWhiteSpace(line)) return;
-            File.AppendAllText(logfilePath, line.Replace(usertoken, "{UserToken}") + Environment.NewLine);
+            File.AppendAllText(logFilePath, line.Replace(UserToken, "{UserToken}") + Environment.NewLine);
 
-            if (line.Contains("启动配置文件"))
+            if (line.Contains("启动成功"))
             {
-                File.Delete(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "frpc.ini"));
-            }
-            else if (line.Contains("启动成功"))
-            {
-                onStartTrue?.Invoke();
+                onStart?.Invoke(true);
             }
             else if (logOpened && !line.Contains("[I]"))
             {
                 logOpened = false;
                 StopTunnelFromId(tunnelId);
-                onStartFalse?.Invoke();
+                onStart?.Invoke(false);
 
                 await Task.Delay(1000);
                 Process.Start(
                     new ProcessStartInfo
                     {
-                        FileName = logfilePath,
+                        FileName = logFilePath,
                         UseShellExecute = true
                     });
             }
@@ -183,14 +227,13 @@ public abstract class TunnelActions
     public static async void StopTunnelFromId
     (
         int tunnelId,
-        Action onStopTrue = null,
-        Action onStopFalse = null
+        Action<bool> onStop = null
     )
     {
         var processes = Process.GetProcessesByName("frpc");
         if (processes.Length == 0 || !await IsTunnelRunningAsync(tunnelId, processes))
         {
-            onStopFalse?.Invoke();
+            onStop?.Invoke(false);
             return;
         }
 
@@ -200,7 +243,7 @@ public abstract class TunnelActions
             process.Kill();
         }
 
-        onStopTrue?.Invoke();
+        onStop?.Invoke(true);
     }
 
     public static async Task<Dictionary<int, bool>> IsTunnelRunningAsync
@@ -213,13 +256,13 @@ public abstract class TunnelActions
 
         var processes = Process.GetProcessesByName("frpc");
         var noProcesses = processes.Length == 0;
-        
-        var tasks = tunnelsData.Select(async tunnel => 
+
+        var tasks = tunnelsData.Select(async tunnel =>
         {
             var isRunning = !noProcesses && await IsTunnelRunningAsync(tunnel.id, processes);
             return (tunnel.id, isRunning);
         });
-        
+
         var results = await Task.WhenAll(tasks);
         return results.ToDictionary(x => x.id, x => x.isRunning);
     }
@@ -233,7 +276,7 @@ public abstract class TunnelActions
         processes ??= Process.GetProcessesByName("frpc");
         if (processes.Length == 0)
             return false;
-        
+
         var tasks = processes.Select(async process =>
         {
             var processTunnelId = await Task.Run(() => GetIdFromProcess(process.Id));
@@ -244,7 +287,7 @@ public abstract class TunnelActions
         return results.Any(x => x);
     }
 
-    private static readonly Regex CommandLineRegex = new(@"-p\s+(\d+)",RegexOptions.Compiled);
+    private static readonly Regex CommandLineRegex = new(@"-p\s+(\d+)", RegexOptions.Compiled);
 
     private static int GetIdFromProcess
     (

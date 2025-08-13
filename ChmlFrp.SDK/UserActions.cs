@@ -11,8 +11,8 @@ public abstract class UserActions
         Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
 
     public static UserInfoClass UserInfo;
-    public static string userid => UserInfo.id.ToString();
-    public static string usertoken => UserInfo.usertoken;
+    public static string Userid => UserInfo.id.ToString();
+    public static string UserToken => UserInfo.usertoken;
 
     public static async Task<string> LoginAsync
     (
@@ -38,7 +38,7 @@ public abstract class UserActions
 
         if (jsonNode == null || (string)jsonNode["state"] != "success") return (string)jsonNode?["msg"];
         UserInfo = JsonSerializer.Deserialize<UserInfoClass>(jsonNode["data"]!.ToJsonString());
-        Key.SetValue("usertoken", usertoken);
+        Key.SetValue("usertoken", UserToken);
         IsLoggedIn = true;
         return (string)jsonNode["msg"];
     }
