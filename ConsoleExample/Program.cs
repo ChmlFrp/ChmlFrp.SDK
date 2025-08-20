@@ -4,30 +4,42 @@ using static System.Console;
 using static ChmlFrp.SDK.TunnelActions;
 using static ChmlFrp.SDK.UserActions;
 
-await LoginAsyncFromToken();
-
-for (;;)
+if (!await AutoLoginAsync())
 {
-    Clear();
-    if (IsLoggedIn)
+    for (;;)
     {
-        ForegroundColor = ConsoleColor.Green;
-        WriteLine("Hello, World!");
+        Clear();
+
+        ForegroundColor = ConsoleColor.Red;
+        WriteLine("You are not logged in.");
         ResetColor();
-        break;
+
+        Write("用户名:");
+        var username = ReadLine();
+        Write("密码:");
+        var password = ReadLine();
+
+        if (await LoginWithCredentialsAsync(username, password, msg =>
+            {
+                ForegroundColor = ConsoleColor.Red;
+                WriteLine(msg);
+                ResetColor();
+            }))
+        {
+            ForegroundColor = ConsoleColor.Green;
+            WriteLine("Hello, World!");
+            ResetColor();
+            break;
+        }
+
+        await Task.Delay(1000);
     }
-
-    ForegroundColor = ConsoleColor.Red;
-    WriteLine("You are not logged in.");
+}
+else
+{
+    ForegroundColor = ConsoleColor.Green;
+    WriteLine("Hello, World!");
     ResetColor();
-
-    Write("用户名:");
-    var username = ReadLine();
-    WriteLine("密码:");
-    var password = ReadLine();
-    WriteLine(await LoginAsync(username, password));
-
-    await Task.Delay(1000);
 }
 
 var tunnelList = await GetTunnelListAsync();
@@ -49,5 +61,5 @@ foreach (var tunnelInfo in tunnelList)
             if (isStop)
                 WriteLine($"Tunnel {tunnelInfo.name} stoped successfully!");
         });
-        
+
 ReadKey();

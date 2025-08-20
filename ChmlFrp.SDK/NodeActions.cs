@@ -20,12 +20,8 @@ public abstract class NodeActions
         // 具体请看 NodeInfoClass 的定义
         var jObject = await GetJsonAsync("https://cf-v2.uapis.cn/nodeinfo", new Dictionary<string, string>
         {
-            {
-                "token", UserActions.UserToken
-            },
-            {
-                "node", nodeName
-            }
+            { "token", UserActions.UserToken },
+            { "node", nodeName }
         });
 
         if (jObject == null || (string)jObject["state"] != "success") return null;

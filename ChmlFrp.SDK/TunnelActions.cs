@@ -13,9 +13,7 @@ public abstract class TunnelActions
 
     public static async Task<List<TunnelInfoClass>> GetTunnelListAsync()
     {
-        if (!IsLoggedIn)
-            return [];
-
+        if (UserInfo == null) return [];
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/tunnel", new Dictionary<string, string>
         {
             { "token", UserToken }
@@ -116,7 +114,7 @@ public abstract class TunnelActions
 
     #region Windows Service Methods
 
-    #region Old Action
+    #region Obsolete Actions
 
     [Obsolete("此方法已废弃，请使用StartTunnelFromId代替")]
     public static void StartTunnel

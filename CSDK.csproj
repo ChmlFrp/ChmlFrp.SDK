@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Version>1.4.8</Version>
+        <Version>1.5.1</Version>
         <LangVersion>preview</LangVersion>
         <PackageId>ChmlFrp.SDK</PackageId>
         <Authors>By ChmlFrp(第三方开发联盟)</Authors>
@@ -10,7 +10,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageReleaseNotes>更新启动关闭隧道的事件</PackageReleaseNotes>
+        <PackageReleaseNotes>兼容旧版本</PackageReleaseNotes>
         <RepositoryUrl>https://github.com/ChmlFrp/ChmlFrp.SDK</RepositoryUrl>
         <Description>一个为 .NET 开发者提供的第三方 ChmlFrp 客户端开发 Nuget 包。</Description>
     </PropertyGroup>

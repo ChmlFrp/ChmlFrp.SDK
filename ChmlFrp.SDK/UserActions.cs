@@ -5,7 +5,7 @@ namespace ChmlFrp.SDK;
 
 public abstract class UserActions
 {
-    public static volatile bool IsLoggedIn;
+    public static Action<bool> OnIsLoggedInChange;
 
     private static readonly RegistryKey Key =
         Registry.CurrentUser.CreateSubKey(@"SOFTWARE\\ChmlFrp", true);
@@ -14,68 +14,68 @@ public abstract class UserActions
     public static string Userid => UserInfo.id.ToString();
     public static string UserToken => UserInfo.usertoken;
 
-    public static async Task<string> LoginAsync
+    [Obsolete] public static bool IsLoggedIn => UserInfo == null;
+
+    public static async Task<bool> LoginWithCredentialsAsync
     (
         string username,
-        string password
+        string password,
+        Action<string> onStatusUpdate = null
     )
     {
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-            throw new ArgumentException("Username and password cannot be empty.");
-
-        if (IsLoggedIn)
-            throw new ArgumentException("Already Logged in.");
-
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/login", new Dictionary<string, string>
         {
-            {
-                "username", username
-            },
-            {
-                "password", password
-            }
+            { "username", username },
+            { "password", password }
         });
+        if (jsonNode == null || (string)jsonNode["state"] != "success")
+        {
+            onStatusUpdate?.Invoke((string)jsonNode?["msg"]);
+            OnIsLoggedInChange?.Invoke(false);
+            return false;
+        }
 
-        if (jsonNode == null || (string)jsonNode["state"] != "success") return (string)jsonNode?["msg"];
         UserInfo = JsonSerializer.Deserialize<UserInfoClass>(jsonNode["data"]!.ToJsonString());
         Key.SetValue("usertoken", UserToken);
-        IsLoggedIn = true;
-        return (string)jsonNode["msg"];
+        OnIsLoggedInChange?.Invoke(true);
+        return true;
     }
 
-    public static async Task LoginAsyncFromToken
+    public static async Task<bool> LoginWithTokenAsync
     (
-        string userToken = null
+        string token,
+        Action<string> onStatusUpdate = null
     )
     {
-        // 可以使用传入的token登录
-        if (!string.IsNullOrWhiteSpace(userToken))
-        {
-            Key.SetValue("usertoken", userToken);
-        }
-        else
-        {
-            userToken = (string)Key.GetValue("usertoken");
-            if (string.IsNullOrWhiteSpace(userToken)) return;
-        }
-
         var jsonNode = await GetJsonAsync("https://cf-v2.uapis.cn/userinfo", new Dictionary<string, string>
         {
-            {
-                "token", userToken
-            }
+            { "token", token }
         });
+        if (jsonNode == null || (string)jsonNode["state"] != "success")
+        {
+            onStatusUpdate?.Invoke((string)jsonNode?["msg"]);
+            OnIsLoggedInChange?.Invoke(false);
+            return false;
+        }
 
-        if (jsonNode == null || (string)jsonNode["state"] != "success") return;
         UserInfo = JsonSerializer.Deserialize<UserInfoClass>(jsonNode["data"]!.ToJsonString());
-        IsLoggedIn = true;
+        OnIsLoggedInChange?.Invoke(true);
+        return true;
+    }
+
+    public static async Task<bool> AutoLoginAsync()
+    {
+        var token = (string)Key.GetValue("usertoken");
+        if (string.IsNullOrWhiteSpace(token))
+            return false;
+        return await LoginWithTokenAsync(token);
     }
 
     public static void Logout()
     {
         Key.DeleteValue("usertoken", false);
-        IsLoggedIn = false;
         UserInfo = null;
+        OnIsLoggedInChange?.Invoke(false);
     }
 
     public static void Register()
@@ -84,4 +84,29 @@ public abstract class UserActions
         // 如果安装WebView2可以在WebView2中打开（自己写）
         Process.Start(new ProcessStartInfo("https://panel.chmlfrp.cn/sign") { UseShellExecute = true });
     }
+
+    #region Obsoletes
+
+    [Obsolete("此方法已废弃，请使用LoginWithCredentialsAsync代替")]
+    public static async Task<string> LoginAsync
+    (
+        string username,
+        string password
+    )
+    {
+        var resultMessage = string.Empty;
+        await LoginWithCredentialsAsync(username, password, msg => resultMessage = msg);
+        return resultMessage;
+    }
+
+    [Obsolete("此方法已废弃，请使用AutoLoginAsync代替")]
+    public static async Task LoginAsyncFromToken
+    (
+        string _ = null
+    )
+    {
+        await AutoLoginAsync();
+    }
+
+    #endregion
 }
